@@ -1,14 +1,16 @@
 <?php
 
+use App\Http\Controllers\BrowserController;
+use App\Http\Controllers\FileController;
 use Illuminate\Support\Facades\Route;
-use Laravel\Fortify\Features;
 
-Route::inertia('/', 'Welcome', [
-    'canRegister' => Features::enabled(Features::registration()),
-])->name('home');
+Route::middleware('auth')->group(function () {
+    Route::redirect('/', '/browser')->name('home');
 
-Route::middleware(['auth', 'verified'])->group(function () {
-    Route::inertia('dashboard', 'Dashboard')->name('dashboard');
+    Route::get('/browser', [BrowserController::class, 'index'])->name('browser.index');
+    Route::get('/browser/{workspace}', [BrowserController::class, 'show'])->name('browser.show');
+
+    Route::put('/api/files/{workspace}', [FileController::class, 'save'])->name('files.save');
 });
 
 require __DIR__.'/settings.php';

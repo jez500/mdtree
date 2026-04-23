@@ -1,14 +1,14 @@
 <script setup lang="ts">
 import { Head } from '@inertiajs/vue3';
+import { index } from '@/actions/App/Http/Controllers/BrowserController';
 import PlaceholderPattern from '@/components/PlaceholderPattern.vue';
-import { dashboard } from '@/routes';
 
 defineOptions({
     layout: {
         breadcrumbs: [
             {
-                title: 'Dashboard',
-                href: dashboard(),
+                title: 'Browser',
+                href: index.url(),
             },
         ],
     },

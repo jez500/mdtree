@@ -1,9 +1,12 @@
 @import 'tailwindcss';
 
 @import 'tw-animate-css';
+@import 'novel-vue/dist/style.css';
 
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
+@source not '../../storage/notes';
+@source not '../../storage/logs';
 
 @custom-variant dark (&:is(.dark *));
 
@@ -169,4 +172,146 @@
     body {
         @apply bg-background text-foreground;
     }
+}
+
+/* Markdown rendered content */
+.prose-content {
+    color: var(--foreground);
+    font-size: 1rem;
+    line-height: 1.75;
+    max-width: 65ch;
+    margin: 0 auto;
+
+    h1, h2, h3, h4, h5, h6 {
+        font-weight: 600;
+        line-height: 1.25;
+        margin-top: 1.5em;
+        margin-bottom: 0.5em;
+        color: var(--foreground);
+    }
+
+    h1 { font-size: 2em; }
+    h2 { font-size: 1.5em; }
+    h3 { font-size: 1.25em; }
+    h4 { font-size: 1.125em; }
+
+    p { margin-bottom: 1em; }
+
+    a {
+        color: var(--primary);
+        text-decoration: underline;
+        text-underline-offset: 2px;
+    }
+
+    ul, ol {
+        padding-left: 1.5em;
+        margin-bottom: 1em;
+    }
+
+    ul { list-style-type: disc; }
+    ol { list-style-type: decimal; }
+    li { margin-bottom: 0.25em; }
+
+    blockquote {
+        border-left: 4px solid var(--border);
+        padding-left: 1em;
+        margin: 1em 0;
+        color: var(--muted-foreground);
+        font-style: italic;
+    }
+
+    code {
+        background: var(--muted);
+        border-radius: 0.25rem;
+        padding: 0.15em 0.4em;
+        font-size: 0.875em;
+        font-family: ui-monospace, monospace;
+    }
+
+    pre {
+        background: var(--muted);
+        border-radius: 0.5rem;
+        padding: 1em;
+        overflow-x: auto;
+        margin-bottom: 1em;
+
+        code {
+            background: none;
+            padding: 0;
+            font-size: 0.875em;
+        }
+    }
+
+    hr {
+        border: none;
+        border-top: 1px solid var(--border);
+        margin: 2em 0;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 1em;
+        font-size: 0.9em;
+    }
+
+    th, td {
+        border: 1px solid var(--border);
+        padding: 0.5em 0.75em;
+        text-align: left;
+    }
+
+    th {
+        background: var(--muted);
+        font-weight: 600;
+    }
+
+    img {
+        max-width: 100%;
+        border-radius: 0.5rem;
+    }
+}
+
+/* Novel-vue dark mode: remap .dark-theme CSS variables to our .dark class */
+html.dark {
+    --novel-white: rgb(25 25 25);
+    --novel-stone-50: rgb(35 35 34);
+    --novel-stone-100: rgb(41 37 36);
+    --novel-stone-200: rgb(66 69 71);
+    --novel-stone-300: rgb(112 118 123);
+    --novel-stone-400: rgb(160 167 173);
+    --novel-stone-500: rgb(193 199 204);
+    --novel-stone-600: rgb(212 217 221);
+    --novel-stone-700: rgb(229 232 235);
+    --novel-stone-800: rgb(232 234 235);
+    --novel-stone-900: rgb(240 240 241);
+    --novel-highlight-default: #000000;
+    --novel-highlight-purple: #3f2c4b;
+    --novel-highlight-red: #5c1a1a;
+    --novel-highlight-yellow: #5c4b1a;
+    --novel-highlight-blue: #1a3d5c;
+    --novel-highlight-green: #1a5c20;
+    --novel-highlight-orange: #5c3a1a;
+    --novel-highlight-pink: #5c1a3a;
+    --novel-highlight-gray: #3a3a3a;
+}
+
+/* Novel-vue prose dark mode: activate invert colors via .dark class (novel-vue uses media query only) */
+html.dark .prose-stone {
+    --tw-prose-body: var(--tw-prose-invert-body);
+    --tw-prose-headings: var(--tw-prose-invert-headings);
+    --tw-prose-lead: var(--tw-prose-invert-lead);
+    --tw-prose-links: var(--tw-prose-invert-links);
+    --tw-prose-bold: var(--tw-prose-invert-bold);
+    --tw-prose-counters: var(--tw-prose-invert-counters);
+    --tw-prose-bullets: var(--tw-prose-invert-bullets);
+    --tw-prose-hr: var(--tw-prose-invert-hr);
+    --tw-prose-quotes: var(--tw-prose-invert-quotes);
+    --tw-prose-quote-borders: var(--tw-prose-invert-quote-borders);
+    --tw-prose-captions: var(--tw-prose-invert-captions);
+    --tw-prose-code: var(--tw-prose-invert-code);
+    --tw-prose-pre-code: var(--tw-prose-invert-pre-code);
+    --tw-prose-pre-bg: var(--tw-prose-invert-pre-bg);
+    --tw-prose-th-borders: var(--tw-prose-invert-th-borders);
+    --tw-prose-td-borders: var(--tw-prose-invert-td-borders);
 }
