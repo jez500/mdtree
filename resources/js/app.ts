@@ -1,4 +1,5 @@
-import { createInertiaApp } from '@inertiajs/vue3';
+import { createInertiaApp, router } from '@inertiajs/vue3';
+import '@/extensions/tableSlashCommand';
 import { initializeTheme } from '@/composables/useAppearance';
 import AppLayout from '@/layouts/AppLayout.vue';
 import AuthLayout from '@/layouts/AuthLayout.vue';
@@ -7,6 +8,18 @@ import SettingsLayout from '@/layouts/settings/Layout.vue';
 import { initializeFlashToast } from '@/lib/flashToast';
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
+
+const scrollLayoutAreasToTop = (): void => {
+    for (const element of document.querySelectorAll<HTMLElement>('.layout-scrollarea')) {
+        element.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+    }
+};
+
+router.on('navigate', () => {
+    requestAnimationFrame(() => {
+        scrollLayoutAreasToTop();
+    });
+});
 
 createInertiaApp({
     title: (title) => (title ? `${title} - ${appName}` : appName),

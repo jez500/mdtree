@@ -51,8 +51,7 @@ const currentWorkspaceName = computed(() => props.workspaces[props.workspace]?.n
                     align="start"
                     :side-offset="4"
                 >
-                    <DropdownMenuLabel class="text-xs text-muted-foreground">Workspaces</DropdownMenuLabel>
-                    <DropdownMenuSeparator />
+
                     <DropdownMenuItem
                         v-for="(ws, key) in workspaces"
                         :key="key"

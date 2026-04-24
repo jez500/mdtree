@@ -31,6 +31,11 @@ class BrowserController extends Controller
         $tree = $this->fileTreeService->tree($workspaceConfig['path'], $extensions);
 
         $filePath = $request->query('path');
+
+        if ($filePath === null) {
+            $filePath = $this->fileTreeService->findReadme($workspaceConfig['path']);
+        }
+
         $fileContent = null;
 
         if ($filePath !== null) {

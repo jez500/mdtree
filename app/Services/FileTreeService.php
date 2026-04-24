@@ -28,9 +28,9 @@ class FileTreeService
      */
     public function readFile(string $rootPath, string $relativePath): ?string
     {
-        $realRoot = realpath($rootPath);
+        $realRoot = $this->realRoot($rootPath);
 
-        if ($realRoot === false) {
+        if ($realRoot === null) {
             return null;
         }
 
@@ -53,18 +53,15 @@ class FileTreeService
      */
     public function writeFile(string $rootPath, string $relativePath, string $content): bool
     {
-        $realRoot = realpath($rootPath);
+        $realRoot = $this->realRoot($rootPath);
 
-        if ($realRoot === false) {
+        if ($realRoot === null) {
             return false;
         }
 
-        $candidate = $realRoot.DIRECTORY_SEPARATOR.ltrim($relativePath, '/\\');
+        $realFile = $this->resolveNewPath($realRoot, $relativePath);
 
-        // realpath() returns false for non-existent files; resolve manually for new files
-        $realFile = realpath($candidate) ?: $candidate;
-
-        if (! str_starts_with($realFile, $realRoot.DIRECTORY_SEPARATOR)) {
+        if ($realFile === null) {
             return false;
         }
 
@@ -73,6 +70,119 @@ class FileTreeService
         }
 
         return file_put_contents($realFile, $content) !== false;
+    }
+
+    public function findReadme(string $rootPath): ?string
+    {
+        $realRoot = $this->realRoot($rootPath);
+
+        if ($realRoot === null) {
+            return null;
+        }
+
+        foreach (scandir($realRoot) ?: [] as $item) {
+            if (strtolower($item) !== 'readme.md') {
+                continue;
+            }
+
+            return $item;
+        }
+
+        return null;
+    }
+
+    public function createFile(string $rootPath, string $relativePath): bool
+    {
+        $realRoot = $this->realRoot($rootPath);
+
+        if ($realRoot === null) {
+            return false;
+        }
+
+        $candidate = $this->resolveNewPath($realRoot, $relativePath);
+
+        if ($candidate === null || file_exists($candidate)) {
+            return false;
+        }
+
+        $directory = dirname($candidate);
+
+        if (! is_dir($directory) && ! mkdir($directory, 0755, true) && ! is_dir($directory)) {
+            return false;
+        }
+
+        return file_put_contents($candidate, '') !== false;
+    }
+
+    public function deleteFile(string $rootPath, string $relativePath): bool
+    {
+        $realRoot = $this->realRoot($rootPath);
+
+        if ($realRoot === null) {
+            return false;
+        }
+
+        $candidate = $realRoot.DIRECTORY_SEPARATOR.ltrim($relativePath, '/\\');
+        $realFile = realpath($candidate);
+
+        if ($realFile === false || ! str_starts_with($realFile, $realRoot.DIRECTORY_SEPARATOR)) {
+            return false;
+        }
+
+        if (! is_file($realFile)) {
+            return false;
+        }
+
+        return unlink($realFile);
+    }
+
+    public function createDirectory(string $rootPath, string $relativePath): bool
+    {
+        $realRoot = $this->realRoot($rootPath);
+
+        if ($realRoot === null) {
+            return false;
+        }
+
+        $candidate = $this->resolveNewPath($realRoot, $relativePath);
+
+        if ($candidate === null || file_exists($candidate)) {
+            return false;
+        }
+
+        return mkdir($candidate, 0755, true);
+    }
+
+    public function moveNode(string $rootPath, string $fromPath, string $toPath): bool
+    {
+        $realRoot = $this->realRoot($rootPath);
+
+        if ($realRoot === null) {
+            return false;
+        }
+
+        $fromCandidate = $realRoot.DIRECTORY_SEPARATOR.ltrim($fromPath, '/\\');
+        $fromReal = realpath($fromCandidate);
+
+        if ($fromReal === false || ! str_starts_with($fromReal, $realRoot.DIRECTORY_SEPARATOR)) {
+            return false;
+        }
+
+        $toCandidate = $this->resolveNewPath($realRoot, $toPath);
+
+        if ($toCandidate === null) {
+            return false;
+        }
+
+        if ($toCandidate === $fromReal) {
+            return true;
+        }
+
+        if (is_dir($fromReal) && str_starts_with($toCandidate, $fromReal.DIRECTORY_SEPARATOR)) {
+            return false;
+        }
+
+        return rename($fromReal, $toCandidate);
     }
 
     /**
@@ -115,5 +225,51 @@ class FileTreeService
         usort($files, fn ($a, $b) => strcmp($a['name'], $b['name']));
 
         return array_merge($folders, $files);
+    }
+
+    private function realRoot(string $rootPath): ?string
+    {
+        $realRoot = realpath($rootPath);
+
+        if ($realRoot === false || ! is_dir($realRoot)) {
+            return null;
+        }
+
+        return $realRoot;
+    }
+
+    private function resolveNewPath(string $realRoot, string $relativePath): ?string
+    {
+        $relativePath = trim(str_replace('\\', '/', $relativePath), '/');
+
+        if ($relativePath === '') {
+            return null;
+        }
+
+        $segments = [];
+
+        foreach (explode('/', $relativePath) as $segment) {
+            if ($segment === '' || $segment === '.') {
+                continue;
+            }
+
+            if ($segment === '..') {
+                if ($segments === []) {
+                    return null;
+                }
+
+                array_pop($segments);
+
+                continue;
+            }
+
+            $segments[] = $segment;
+        }
+
+        if ($segments === []) {
+            return null;
+        }
+
+        return $realRoot.DIRECTORY_SEPARATOR.implode(DIRECTORY_SEPARATOR, $segments);
     }
 }

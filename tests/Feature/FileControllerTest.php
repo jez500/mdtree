@@ -83,3 +83,94 @@ test('file save requires authentication', function () {
         'content' => '# Content',
     ])->assertRedirectToRoute('login');
 });
+
+test('file create creates a file', function () {
+    $this->postJson('/api/files/test/create', [
+        'path' => 'notes/new.md',
+    ])
+        ->assertOk()
+        ->assertJson(['created' => true]);
+
+    expect(file_exists($this->workspaceDir.'/notes/new.md'))->toBeTrue();
+});
+
+test('file create rejects traversal attempts', function () {
+    $this->postJson('/api/files/test/create', [
+        'path' => '../../etc/passwd',
+    ])->assertUnprocessable();
+});
+
+test('file create rejects existing files', function () {
+    file_put_contents($this->workspaceDir.'/notes.md', '# Notes');
+
+    $this->postJson('/api/files/test/create', [
+        'path' => 'notes.md',
+    ])->assertUnprocessable();
+});
+
+test('directory create creates a directory', function () {
+    $this->postJson('/api/directories/test', [
+        'path' => 'notes/archive',
+    ])
+        ->assertOk()
+        ->assertJson(['created' => true]);
+
+    expect(is_dir($this->workspaceDir.'/notes/archive'))->toBeTrue();
+});
+
+test('directory create rejects traversal attempts', function () {
+    $this->postJson('/api/directories/test', [
+        'path' => '../../etc/passwd',
+    ])->assertUnprocessable();
+});
+
+test('file delete deletes a file', function () {
+    file_put_contents($this->workspaceDir.'/notes.md', '# Notes');
+
+    $this->deleteJson('/api/files/test', [
+        'path' => 'notes.md',
+    ])
+        ->assertOk()
+        ->assertJson(['deleted' => true]);
+
+    expect(file_exists($this->workspaceDir.'/notes.md'))->toBeFalse();
+});
+
+test('file delete rejects traversal attempts', function () {
+    $this->deleteJson('/api/files/test', [
+        'path' => '../../etc/passwd',
+    ])->assertUnprocessable();
+});
+
+test('node move moves a file', function () {
+    file_put_contents($this->workspaceDir.'/notes.md', '# Notes');
+    mkdir($this->workspaceDir.'/archive', 0755, true);
+
+    $this->patchJson('/api/files/test', [
+        'from' => 'notes.md',
+        'to' => 'archive/notes.md',
+    ])
+        ->assertOk()
+        ->assertJson(['moved' => true]);
+
+    expect(file_exists($this->workspaceDir.'/notes.md'))->toBeFalse();
+    expect(file_exists($this->workspaceDir.'/archive/notes.md'))->toBeTrue();
+});
+
+test('node move rejects traversal attempts', function () {
+    file_put_contents($this->workspaceDir.'/notes.md', '# Notes');
+
+    $this->patchJson('/api/files/test', [
+        'from' => 'notes.md',
+        'to' => '../../etc/passwd',
+    ])->assertUnprocessable();
+});
+
+test('node move rejects moving a folder into its subtree', function () {
+    mkdir($this->workspaceDir.'/archive/child', 0755, true);
+
+    $this->patchJson('/api/files/test', [
+        'from' => 'archive',
+        'to' => 'archive/child/archive',
+    ])->assertUnprocessable();
+});

@@ -272,6 +272,62 @@
     }
 }
 
+/* Sidebar */
+[data-slot=sidebar][data-state=collapsed] {
+    width: 0;
+}
+
+/* Code */
+pre.rounded-sm.bg-stone-100.text-stone-800 {
+    background-color: var(--novel-stone-50);
+    color: var(--novel-stone-800);
+    border-radius: 1rem;
+}
+
+/* Table */
+.ProseMirror table {
+    border-collapse: collapse;
+    table-layout: fixed;
+    width: 100%;
+    margin: 1rem 0;
+}
+
+.ProseMirror td,
+.ProseMirror th {
+    border: 1px solid var(--novel-stone-200);
+    padding: 0.5rem 0.75rem;
+    vertical-align: top;
+    min-width: 2rem;
+    position: relative;
+}
+
+.ProseMirror td p,
+.ProseMirror th p {
+    margin: 0;
+}
+
+.ProseMirror th {
+    background-color: var(--novel-stone-50);
+    font-weight: 600;
+    text-align: left;
+}
+
+.ProseMirror .selectedCell::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgba(59, 130, 246, 0.15);
+    pointer-events: none;
+}
+
+.editor-wrapper .tiptap {
+    padding-bottom: 4rem;
+}
+
+.border-input {
+    border-color: var(--input);
+}
+
 /* Novel-vue dark mode: remap .dark-theme CSS variables to our .dark class */
 html.dark {
     --novel-white: rgb(25 25 25);

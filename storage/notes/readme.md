@@ -1,10 +1,18 @@
 # My Notes
 
-Welcome to your mdtree workspace. This is the root readme — a good place to keep an index of everything. cool beanss this is ff coolio
+Welcome to your mdtree workspace. This is the root readme — a good place to keep an index of everything. cool beanss this is ff coolio5555
+
+| afasf | sfasf |
+| -- | -- |
+| foo | bb |
 
 ## Quick Navigation
 
-SectionDescription[Getting Started](getting-started/first-steps.md)Setup and first steps[Style Guide](styleguide.md)Full Markdown syntax referenceProject AlphaActive project notesProject BetaPlanning stage projectReferenceKeyboard shortcuts and commandsJournalDaily notes and journal
+| fooo | bar |
+| -- | -- |
+| hi | there |
+
+SectionDescription[Getting Started](getting-started/first-steps.md) Setup and first steps[Style Guide](styleguide.md)Full Markdown syntax referenceProject AlphaActive project notesProject BetaPlanning stage projectReferenceKeyboard shortcuts and commandsJournalDaily notes and journal
 
 ## About This Workspace
 

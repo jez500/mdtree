@@ -51,6 +51,40 @@ test('browser show renders the browser page', function () {
         );
 });
 
+test('browser show opens readme by default', function () {
+    file_put_contents($this->workspaceDir.'/readme.md', '# Read Me');
+
+    $this->get('/browser/test')
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('filePath', 'readme.md')
+            ->where('fileContent', '# Read Me')
+        );
+});
+
+test('browser show opens readme case insensitively', function () {
+    file_put_contents($this->workspaceDir.'/README.MD', '# Read Me');
+
+    $this->get('/browser/test')
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('filePath', 'README.MD')
+            ->where('fileContent', '# Read Me')
+        );
+});
+
+test('browser show respects explicit path over readme', function () {
+    file_put_contents($this->workspaceDir.'/readme.md', '# Read Me');
+    file_put_contents($this->workspaceDir.'/notes.md', '# Notes');
+
+    $this->get('/browser/test?path=notes.md')
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('filePath', 'notes.md')
+            ->where('fileContent', '# Notes')
+        );
+});
+
 test('browser show loads file content when path is given', function () {
     file_put_contents($this->workspaceDir.'/hello.md', '# Hello World');
 

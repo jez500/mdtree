@@ -1,0 +1,14 @@
+diff --git a/node_modules/novel-vue/dist/novel-vue.js b/node_modules/novel-vue/dist/novel-vue.js
+index 5e370df..4c8a017 100644
+--- a/node_modules/novel-vue/dist/novel-vue.js
++++ b/node_modules/novel-vue/dist/novel-vue.js
+@@ -23590,7 +23590,8 @@ const loe = (n) => n.replace(/([a-z0-9])([A-Z])/g, "$1-$2").toLowerCase(), be =
+     searchTerms: ["codeblock"],
+     icon: Sc,
+     command: ({ editor: e, range: t }) => e.chain().focus().deleteRange(t).toggleCodeBlock().run()
+-  }
++  },
++  ...(typeof window !== "undefined" && Array.isArray(window.__novelSlashItems) ? window.__novelSlashItems : [])
+ ].filter((e) => {
+   if (typeof n == "string" && n.length > 0) {
+     const t = n.toLowerCase();
