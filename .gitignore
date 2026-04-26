@@ -10,6 +10,8 @@
 /resources/js/routes
 /resources/js/wayfinder
 /vendor
+/storage/database.sqlite
+/storage/notes
 .DS_Store
 .env
 .env.backup
@@ -27,8 +29,8 @@ yarn-error.log
 /.vscode
 /.zed
 
-/.agents 
-/.claude 
-/.junie 
+/.agents
+/.claude
+/.junie
 CLAUDE.md
 AGENTS.md
