@@ -3,11 +3,15 @@
 use App\Http\Controllers\BrowserController;
 use App\Http\Controllers\FileController;
 use Illuminate\Support\Facades\Route;
+use Inertia\Inertia;
 
 Route::middleware('auth')->group(function () {
     Route::redirect('/', '/browser')->name('home');
+    Route::get('/dashboard', fn () => Inertia::render('Dashboard'))->name('dashboard');
 
     Route::get('/browser', [BrowserController::class, 'index'])->name('browser.index');
+    Route::get('/browser/{workspace}/links', [BrowserController::class, 'resolveLink'])->name('browser.links.resolve');
+    Route::get('/browser/{workspace}/search', [BrowserController::class, 'search'])->name('browser.search');
     Route::get('/browser/{workspace}', [BrowserController::class, 'show'])->name('browser.show');
 
     Route::put('/api/files/{workspace}', [FileController::class, 'save'])->name('files.save');

@@ -3,8 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Services\FileTreeService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Redirect;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -49,6 +51,50 @@ class BrowserController extends Controller
             'tree' => $tree,
             'filePath' => $filePath,
             'fileContent' => $fileContent,
+        ]);
+    }
+
+    public function search(string $workspace, Request $request): JsonResponse
+    {
+        $workspaces = config('mdtree.workspaces');
+
+        abort_unless(isset($workspaces[$workspace]), 404);
+
+        $validated = $request->validate([
+            'q' => ['nullable', 'string', 'max:100'],
+        ]);
+
+        return response()->json([
+            'results' => $this->fileTreeService->search(
+                $workspaces[$workspace]['path'],
+                config('mdtree.extensions'),
+                $validated['q'] ?? '',
+            ),
+        ]);
+    }
+
+    public function resolveLink(string $workspace, Request $request): RedirectResponse
+    {
+        $workspaces = config('mdtree.workspaces');
+
+        abort_unless(isset($workspaces[$workspace]), 404);
+
+        $validated = $request->validate([
+            'from' => ['required', 'string'],
+            'href' => ['required', 'string'],
+        ]);
+
+        $targetPath = $this->fileTreeService->resolveMarkdownLink(
+            $workspaces[$workspace]['path'],
+            $validated['from'],
+            $validated['href'],
+        );
+
+        abort_if($targetPath === null, 404);
+
+        return Redirect::route('browser.show', [
+            'workspace' => $workspace,
+            'path' => $targetPath,
         ]);
     }
 }

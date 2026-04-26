@@ -5,8 +5,11 @@
 ## Goals for January
 
 - [ ] Ship mdtree v1 (viewer)
+
 - [ ] Set up two real workspaces (personal + work)
+
 - [ ] Write at least 20 notes to populate the tree
+
 - [ ] Decide on TipTap editor approach for v2
 
 ## 2025-01-06 — Back from break
@@ -14,6 +17,7 @@
 Started the year with a focus session on the frontend. The sidebar layout is working well. Key remaining issue: prose CSS needs work — tables and blockquotes look rough.
 
 **Links to related docs:**
+
 - [Project Alpha Roadmap](../../projects/alpha/planning/roadmap.md)
 - [Requirements](../../projects/alpha/planning/requirements.md)
 

@@ -97,8 +97,68 @@ test('browser show loads file content when path is given', function () {
         );
 });
 
+test('browser resolves relative markdown links to files', function () {
+    mkdir($this->workspaceDir.'/notes', 0755, true);
+    file_put_contents($this->workspaceDir.'/notes/source.md', '[Target](../target.md)');
+    file_put_contents($this->workspaceDir.'/target.md', '# Target');
+
+    $this->get('/browser/test/links?from=notes/source.md&href=../target.md')
+        ->assertRedirect('/browser/test?path=target.md');
+});
+
+test('browser link resolver rejects external links', function () {
+    file_put_contents($this->workspaceDir.'/source.md', '[External](https://example.com)');
+
+    $this->get('/browser/test/links?from=source.md&href=https://example.com')
+        ->assertNotFound();
+});
+
+test('browser search ranks title matches above body matches', function () {
+    file_put_contents($this->workspaceDir.'/alpha.md', 'Only body mentions zebra.');
+    file_put_contents($this->workspaceDir.'/zebra-notes.md', 'No matching body.');
+
+    $this->getJson('/browser/test/search?q=zebra')
+        ->assertOk()
+        ->assertJsonPath('results.0.path', 'zebra-notes.md')
+        ->assertJsonPath('results.1.path', 'alpha.md');
+});
+
+test('browser search only scans registered extensions', function () {
+    file_put_contents($this->workspaceDir.'/notes.md', 'needle');
+    file_put_contents($this->workspaceDir.'/image.png', 'needle');
+
+    $this->getJson('/browser/test/search?q=needle')
+        ->assertOk()
+        ->assertJsonCount(1, 'results')
+        ->assertJsonPath('results.0.path', 'notes.md');
+});
+
+test('browser search returns matching document metadata', function () {
+    mkdir($this->workspaceDir.'/nested', 0755, true);
+    file_put_contents($this->workspaceDir.'/nested/notes.md', '# Notes'.PHP_EOL.PHP_EOL.'A searchable phrase lives here.');
+
+    $this->getJson('/browser/test/search?q=searchable')
+        ->assertOk()
+        ->assertJsonPath('results.0.title', 'notes')
+        ->assertJsonPath('results.0.path', 'nested/notes.md')
+        ->assertJson(fn ($json) => $json
+            ->has('results.0.excerpt')
+            ->etc()
+        );
+});
+
+test('browser search requires authentication', function () {
+    auth()->logout();
+
+    $this->get('/browser/test/search?q=notes')->assertRedirectToRoute('login');
+});
+
 test('browser show returns 404 for unknown workspace', function () {
     $this->get('/browser/nonexistent')->assertNotFound();
+});
+
+test('browser search returns 404 for unknown workspace', function () {
+    $this->getJson('/browser/nonexistent/search?q=notes')->assertNotFound();
 });
 
 test('browser show returns 404 for path traversal attempt', function () {

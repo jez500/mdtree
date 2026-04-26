@@ -157,6 +157,49 @@ test('node move moves a file', function () {
     expect(file_exists($this->workspaceDir.'/archive/notes.md'))->toBeTrue();
 });
 
+test('node move updates markdown links to moved files', function () {
+    mkdir($this->workspaceDir.'/notes', 0755, true);
+    mkdir($this->workspaceDir.'/archive', 0755, true);
+    file_put_contents($this->workspaceDir.'/index.md', '[Notes](notes/notes.md)');
+    file_put_contents($this->workspaceDir.'/notes/notes.md', '# Notes');
+
+    $this->patchJson('/api/files/test', [
+        'from' => 'notes/notes.md',
+        'to' => 'archive/notes.md',
+    ])->assertOk();
+
+    expect(file_get_contents($this->workspaceDir.'/index.md'))->toBe('[Notes](archive/notes.md)');
+});
+
+test('node move updates links inside moved markdown files', function () {
+    mkdir($this->workspaceDir.'/notes', 0755, true);
+    mkdir($this->workspaceDir.'/archive', 0755, true);
+    file_put_contents($this->workspaceDir.'/notes/ref.md', '# Reference');
+    file_put_contents($this->workspaceDir.'/notes/notes.md', '[Reference](ref.md)');
+
+    $this->patchJson('/api/files/test', [
+        'from' => 'notes/notes.md',
+        'to' => 'archive/notes.md',
+    ])->assertOk();
+
+    expect(file_get_contents($this->workspaceDir.'/archive/notes.md'))->toBe('[Reference](../notes/ref.md)');
+});
+
+test('node move updates markdown links for moved directories', function () {
+    mkdir($this->workspaceDir.'/notes/deep', 0755, true);
+    mkdir($this->workspaceDir.'/archive', 0755, true);
+    file_put_contents($this->workspaceDir.'/index.md', '[Notes](notes/deep/notes.md)');
+    file_put_contents($this->workspaceDir.'/notes/deep/notes.md', '[Index](../../index.md)');
+
+    $this->patchJson('/api/files/test', [
+        'from' => 'notes',
+        'to' => 'archive/notes',
+    ])->assertOk();
+
+    expect(file_get_contents($this->workspaceDir.'/index.md'))->toBe('[Notes](archive/notes/deep/notes.md)');
+    expect(file_get_contents($this->workspaceDir.'/archive/notes/deep/notes.md'))->toBe('[Index](../../../index.md)');
+});
+
 test('node move rejects traversal attempts', function () {
     file_put_contents($this->workspaceDir.'/notes.md', '# Notes');
 

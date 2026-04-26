@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { router } from '@inertiajs/vue3';
-import { FilePlus, FolderPlus } from 'lucide-vue-next';
+import { FilePlus, FolderPlus, Search } from 'lucide-vue-next';
 import { computed, provide, reactive, ref, watch } from 'vue';
 import { show } from '@/actions/App/Http/Controllers/BrowserController';
 import { moveNode } from '@/actions/App/Http/Controllers/FileController';
 import CreateNodeDialog from '@/components/CreateNodeDialog.vue';
 import DeleteFileDialog from '@/components/DeleteFileDialog.vue';
 import FileTreeNode from '@/components/FileTreeNode.vue';
+import SearchDialog from '@/components/SearchDialog.vue';
 import { Button } from '@/components/ui/button';
 import type { FileTreeNode as FileTreeNodeType } from '@/types/browser';
 
@@ -22,6 +23,7 @@ const dialog = reactive({
     mode: null as 'createFile' | 'createDir' | 'deleteFile' | null,
     targetPath: '',
 });
+const searchOpen = ref(false);
 
 const treeNodes = ref<FileTreeNodeType[]>([]);
 const activePath = computed(() => props.activePath);
@@ -42,14 +44,21 @@ watch(
     { immediate: true },
 );
 
-function getAncestorPaths(nodes: FileTreeNodeType[], target: string, current: string[] = []): string[] | null {
+function getAncestorPaths(
+    nodes: FileTreeNodeType[],
+    target: string,
+    current: string[] = [],
+): string[] | null {
     for (const node of nodes) {
         if (node.type === 'file' && node.path === target) {
             return current;
         }
 
         if (node.type === 'folder') {
-            const found = getAncestorPaths(node.children ?? [], target, [...current, node.path]);
+            const found = getAncestorPaths(node.children ?? [], target, [
+                ...current,
+                node.path,
+            ]);
 
             if (found !== null) {
                 return found;
@@ -125,7 +134,10 @@ function submitMove(fromPath: string, toPath: string) {
     }
 
     const nextActivePath = resolveActivePath(fromPath, toPath);
-    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ?? '';
+    const csrfToken =
+        document
+            .querySelector('meta[name="csrf-token"]')
+            ?.getAttribute('content') ?? '';
 
     fetch(moveNode.url(props.workspace), {
         method: 'PATCH',
@@ -143,8 +155,14 @@ function submitMove(fromPath: string, toPath: string) {
                 throw new Error('Move failed');
             }
 
-            if (nextActivePath !== null && nextActivePath !== activePath.value) {
-                router.visit(fileUrl(nextActivePath), { preserveScroll: true, replace: true });
+            if (
+                nextActivePath !== null &&
+                nextActivePath !== activePath.value
+            ) {
+                router.visit(fileUrl(nextActivePath), {
+                    preserveScroll: true,
+                    replace: true,
+                });
 
                 return;
             }
@@ -202,7 +220,9 @@ function handleDeleted() {
     closeDialog();
 
     if (shouldGoToRoot) {
-        router.visit(show.url({ workspace: props.workspace }), { preserveScroll: true });
+        router.visit(show.url({ workspace: props.workspace }), {
+            preserveScroll: true,
+        });
 
         return;
     }
@@ -219,10 +239,10 @@ provide('filetree-on-root-drop', handleRootDrop);
 </script>
 
 <template>
-    <div class="select-none py-1 text-[14px]">
+    <div class="py-1 text-[14px] select-none">
         <div class="flex items-center justify-between px-2 py-1">
             <span
-                class="text-xs font-medium uppercase tracking-wide text-sidebar-foreground/50"
+                class="text-xs font-medium tracking-wide text-sidebar-foreground/50 uppercase"
                 title="Drop here to move to workspace root"
                 @dragover.prevent
                 @drop.prevent.stop="handleRootDrop"
@@ -230,10 +250,31 @@ provide('filetree-on-root-drop', handleRootDrop);
                 ROOT
             </span>
             <div class="flex gap-1">
-                <Button variant="ghost" size="icon" class="h-6 w-6" title="New Directory" @click="openDialog('createDir', '')">
+                <Button
+                    variant="ghost"
+                    size="icon"
+                    class="h-6 w-6"
+                    title="Search Documents"
+                    @click="searchOpen = true"
+                >
+                    <Search class="size-3.5" />
+                </Button>
+                <Button
+                    variant="ghost"
+                    size="icon"
+                    class="h-6 w-6"
+                    title="New Directory"
+                    @click="openDialog('createDir', '')"
+                >
                     <FolderPlus class="size-3.5" />
                 </Button>
-                <Button variant="ghost" size="icon" class="h-6 w-6" title="New File" @click="openDialog('createFile', '')">
+                <Button
+                    variant="ghost"
+                    size="icon"
+                    class="h-6 w-6"
+                    title="New File"
+                    @click="openDialog('createFile', '')"
+                >
                     <FilePlus class="size-3.5" />
                 </Button>
             </div>
@@ -254,7 +295,11 @@ provide('filetree-on-root-drop', handleRootDrop);
         </div>
 
         <CreateNodeDialog
-            :open="dialog.mode === 'createFile' || dialog.mode === 'createDir' ? dialog.open : false"
+            :open="
+                dialog.mode === 'createFile' || dialog.mode === 'createDir'
+                    ? dialog.open
+                    : false
+            "
             :type="dialog.mode === 'createDir' ? 'directory' : 'file'"
             :parent-path="dialog.targetPath"
             :workspace="workspace"
@@ -269,5 +314,7 @@ provide('filetree-on-root-drop', handleRootDrop);
             @update:open="dialog.open = $event"
             @deleted="handleDeleted"
         />
+
+        <SearchDialog v-model:open="searchOpen" :workspace="workspace" />
     </div>
 </template>

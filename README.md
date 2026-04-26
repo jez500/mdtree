@@ -143,3 +143,26 @@ npm install @tiptap/vue-3 @tiptap/starter-kit \
 | Image handling? | Serve images as static files from the workspace root |
 | Internal wiki links `[[...]]`? | TipTap custom extension; implement in Phase 4 |
 | Search across all files? | Simple `grep` via `Process::run()` for now; full-text index later |
+
+---
+
+## Docker
+
+Build the image with your requested tag:
+
+```bash
+docker build -t jez500/mdtree .
+```
+
+Run the container:
+
+```bash
+docker run --rm -p 8000:80 --name mdtree jez500/mdtree
+```
+
+Open the app at `http://localhost:8000`.
+
+Notes:
+
+- On first boot, the container copies `.env.example` to `.env`, generates `APP_KEY`, and runs migrations automatically.
+- Data is stored in `database/database.sqlite` inside the container. Mount a volume if you want persistence across container recreations.

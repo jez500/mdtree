@@ -182,7 +182,12 @@
     max-width: 65ch;
     margin: 0 auto;
 
-    h1, h2, h3, h4, h5, h6 {
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6 {
         font-weight: 600;
         line-height: 1.25;
         margin-top: 1.5em;
@@ -190,12 +195,22 @@
         color: var(--foreground);
     }
 
-    h1 { font-size: 2em; }
-    h2 { font-size: 1.5em; }
-    h3 { font-size: 1.25em; }
-    h4 { font-size: 1.125em; }
+    h1 {
+        font-size: 2em;
+    }
+    h2 {
+        font-size: 1.5em;
+    }
+    h3 {
+        font-size: 1.25em;
+    }
+    h4 {
+        font-size: 1.125em;
+    }
 
-    p { margin-bottom: 1em; }
+    p {
+        margin-bottom: 1em;
+    }
 
     a {
         color: var(--primary);
@@ -203,14 +218,21 @@
         text-underline-offset: 2px;
     }
 
-    ul, ol {
+    ul,
+    ol {
         padding-left: 1.5em;
         margin-bottom: 1em;
     }
 
-    ul { list-style-type: disc; }
-    ol { list-style-type: decimal; }
-    li { margin-bottom: 0.25em; }
+    ul {
+        list-style-type: disc;
+    }
+    ol {
+        list-style-type: decimal;
+    }
+    li {
+        margin-bottom: 0.25em;
+    }
 
     blockquote {
         border-left: 4px solid var(--border);
@@ -255,7 +277,8 @@
         font-size: 0.9em;
     }
 
-    th, td {
+    th,
+    td {
         border: 1px solid var(--border);
         padding: 0.5em 0.75em;
         text-align: left;
@@ -273,7 +296,7 @@
 }
 
 /* Sidebar */
-[data-slot=sidebar][data-state=collapsed] {
+[data-slot='sidebar'][data-state='collapsed'] {
     width: 0;
 }
 
@@ -322,6 +345,25 @@ pre.rounded-sm.bg-stone-100.text-stone-800 {
 
 .editor-wrapper .tiptap {
     padding-bottom: 4rem;
+}
+
+.editor-wrapper .tiptap a[href^='http://']::after,
+.editor-wrapper .tiptap a[href^='https://']::after,
+.prose-content a[href^='http://']::after,
+.prose-content a[href^='https://']::after {
+    display: inline-block;
+    width: 0.85em;
+    height: 0.85em;
+    margin-left: 0.18em;
+    background-color: currentColor;
+    content: '';
+    -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 3h6v6'/%3E%3Cpath d='M10 14 21 3'/%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/%3E%3C/svg%3E");
+    mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 3h6v6'/%3E%3Cpath d='M10 14 21 3'/%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/%3E%3C/svg%3E");
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+    -webkit-mask-size: contain;
+    mask-size: contain;
+    vertical-align: -0.08em;
 }
 
 .border-input {

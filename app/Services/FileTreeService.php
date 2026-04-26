@@ -3,6 +3,9 @@
 namespace App\Services;
 
 use DirectoryIterator;
+use RecursiveDirectoryIterator;
+use RecursiveIteratorIterator;
+use SplFileInfo;
 
 class FileTreeService
 {
@@ -89,6 +92,58 @@ class FileTreeService
         }
 
         return null;
+    }
+
+    /**
+     * @param  string[]  $extensions
+     * @return array<int, array{title: string, path: string, excerpt: string}>
+     */
+    public function search(string $rootPath, array $extensions, string $query, int $limit = 20): array
+    {
+        $realRoot = $this->realRoot($rootPath);
+        $query = trim($query);
+
+        if ($realRoot === null || $query === '') {
+            return [];
+        }
+
+        $matches = [];
+
+        foreach ($this->searchableFiles($realRoot, $extensions) as $file) {
+            $content = file_get_contents($file->getPathname());
+
+            if ($content === false) {
+                continue;
+            }
+
+            $relativePath = $this->relativeFilePath($realRoot, $file);
+            $title = pathinfo($file->getFilename(), PATHINFO_FILENAME);
+            $titleMatches = substr_count(strtolower($title), strtolower($query));
+            $pathMatches = substr_count(strtolower($relativePath), strtolower($query));
+            $contentMatches = substr_count(strtolower($content), strtolower($query));
+
+            if ($titleMatches + $pathMatches + $contentMatches === 0) {
+                continue;
+            }
+
+            $matches[] = [
+                'title' => $title,
+                'path' => $relativePath,
+                'excerpt' => $this->excerpt($content, $query),
+                'score' => ($titleMatches * 1000) + ($pathMatches * 100) + $contentMatches,
+            ];
+        }
+
+        usort($matches, fn (array $a, array $b): int => $b['score'] <=> $a['score'] ?: strcmp($a['path'], $b['path']));
+
+        return array_map(
+            fn (array $match): array => [
+                'title' => $match['title'],
+                'path' => $match['path'],
+                'excerpt' => $match['excerpt'],
+            ],
+            array_slice($matches, 0, $limit),
+        );
     }
 
     public function createFile(string $rootPath, string $relativePath): bool
@@ -182,7 +237,37 @@ class FileTreeService
             return false;
         }
 
-        return rename($fromReal, $toCandidate);
+        if (! rename($fromReal, $toCandidate)) {
+            return false;
+        }
+
+        $this->rewriteMovedMarkdownLinks($realRoot, $fromPath, $toPath);
+
+        return true;
+    }
+
+    public function resolveMarkdownLink(string $rootPath, string $fromPath, string $href): ?string
+    {
+        $realRoot = $this->realRoot($rootPath);
+
+        if ($realRoot === null || ! $this->isLocalMarkdownHref($href)) {
+            return null;
+        }
+
+        $parts = $this->splitHref($href);
+        $resolved = $this->normalizeRelativePath(dirname($this->normalizePath($fromPath)), $parts['path']);
+
+        if ($resolved === null || ! $this->isMarkdownPath($resolved)) {
+            return null;
+        }
+
+        $realFile = realpath($realRoot.DIRECTORY_SEPARATOR.str_replace('/', DIRECTORY_SEPARATOR, $resolved));
+
+        if ($realFile === false || ! str_starts_with($realFile, $realRoot.DIRECTORY_SEPARATOR) || ! is_file($realFile)) {
+            return null;
+        }
+
+        return $resolved;
     }
 
     /**
@@ -271,5 +356,264 @@ class FileTreeService
         }
 
         return $realRoot.DIRECTORY_SEPARATOR.implode(DIRECTORY_SEPARATOR, $segments);
+    }
+
+    private function rewriteMovedMarkdownLinks(string $realRoot, string $fromPath, string $toPath): void
+    {
+        $fromPath = $this->normalizePath($fromPath);
+        $toPath = $this->normalizePath($toPath);
+
+        foreach ($this->markdownFiles($realRoot) as $currentPath) {
+            $absolutePath = $realRoot.DIRECTORY_SEPARATOR.str_replace('/', DIRECTORY_SEPARATOR, $currentPath);
+            $content = file_get_contents($absolutePath);
+
+            if ($content === false) {
+                continue;
+            }
+
+            $oldPath = $this->pathBeforeMove($currentPath, $fromPath, $toPath);
+            $updated = $this->rewriteMarkdownLinks($content, $oldPath, $currentPath, $fromPath, $toPath);
+
+            if ($updated !== $content) {
+                file_put_contents($absolutePath, $updated);
+            }
+        }
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function markdownFiles(string $realRoot): array
+    {
+        $files = [];
+        $iterator = new RecursiveIteratorIterator(
+            new RecursiveDirectoryIterator($realRoot, RecursiveDirectoryIterator::SKIP_DOTS),
+        );
+
+        foreach ($iterator as $file) {
+            if (! $file->isFile() || ! $this->isMarkdownPath($file->getFilename())) {
+                continue;
+            }
+
+            $files[] = ltrim(str_replace([$realRoot, DIRECTORY_SEPARATOR], ['', '/'], $file->getPathname()), '/');
+        }
+
+        return $files;
+    }
+
+    /**
+     * @param  string[]  $extensions
+     * @return array<int, SplFileInfo>
+     */
+    private function searchableFiles(string $realRoot, array $extensions): array
+    {
+        $files = [];
+
+        foreach (new DirectoryIterator($realRoot) as $item) {
+            if ($item->isDot() || str_starts_with($item->getFilename(), '.')) {
+                continue;
+            }
+
+            if ($item->isDir()) {
+                array_push($files, ...$this->searchableFiles($item->getPathname(), $extensions));
+
+                continue;
+            }
+
+            if ($item->isFile() && in_array(strtolower($item->getExtension()), $extensions, true)) {
+                $files[] = new SplFileInfo($item->getPathname());
+            }
+        }
+
+        return $files;
+    }
+
+    private function relativeFilePath(string $realRoot, SplFileInfo $file): string
+    {
+        return ltrim(str_replace([$realRoot, DIRECTORY_SEPARATOR], ['', '/'], $file->getPathname()), '/');
+    }
+
+    private function excerpt(string $content, string $query): string
+    {
+        $position = stripos($content, $query);
+        $normalized = trim(preg_replace('/\s+/', ' ', $content) ?? $content);
+
+        if ($position === false) {
+            return mb_substr($normalized, 0, 160);
+        }
+
+        $start = max(0, $position - 60);
+        $excerpt = trim(preg_replace('/\s+/', ' ', mb_substr($content, $start, 180)) ?? '');
+
+        return ($start > 0 ? '...' : '').$excerpt;
+    }
+
+    private function rewriteMarkdownLinks(
+        string $content,
+        string $oldFilePath,
+        string $currentFilePath,
+        string $fromPath,
+        string $toPath,
+    ): string {
+        return preg_replace_callback(
+            '/(?<!!)\[[^\]\n]+\]\((?<href>[^)\s]+(?:\s+"[^"]*")?)\)/',
+            function (array $matches) use ($oldFilePath, $currentFilePath, $fromPath, $toPath): string {
+                $hrefWithTitle = $matches['href'];
+                [$href, $title] = $this->splitMarkdownHrefAndTitle($hrefWithTitle);
+
+                if (! $this->isLocalMarkdownHref($href)) {
+                    return $matches[0];
+                }
+
+                $parts = $this->splitHref($href);
+                $oldTargetPath = $this->normalizeRelativePath(dirname($oldFilePath), $parts['path']);
+
+                if ($oldTargetPath === null || ! $this->isMarkdownPath($oldTargetPath)) {
+                    return $matches[0];
+                }
+
+                $newTargetPath = $this->pathAfterMove($oldTargetPath, $fromPath, $toPath);
+
+                if ($newTargetPath === $oldTargetPath && $oldFilePath === $currentFilePath) {
+                    return $matches[0];
+                }
+
+                $nextHref = $this->relativePath(dirname($currentFilePath), $newTargetPath).$parts['query'].$parts['fragment'];
+
+                return str_replace($hrefWithTitle, $nextHref.$title, $matches[0]);
+            },
+            $content,
+        ) ?? $content;
+    }
+
+    private function pathBeforeMove(string $currentPath, string $fromPath, string $toPath): string
+    {
+        if ($currentPath === $toPath) {
+            return $fromPath;
+        }
+
+        $prefix = $toPath.'/';
+
+        if (str_starts_with($currentPath, $prefix)) {
+            return $fromPath.'/'.substr($currentPath, strlen($prefix));
+        }
+
+        return $currentPath;
+    }
+
+    private function pathAfterMove(string $path, string $fromPath, string $toPath): string
+    {
+        if ($path === $fromPath) {
+            return $toPath;
+        }
+
+        $prefix = $fromPath.'/';
+
+        if (str_starts_with($path, $prefix)) {
+            return $toPath.'/'.substr($path, strlen($prefix));
+        }
+
+        return $path;
+    }
+
+    /**
+     * @return array{0: string, 1: string}
+     */
+    private function splitMarkdownHrefAndTitle(string $href): array
+    {
+        if (preg_match('/^(?<href>\S+)(?<title>\s+"[^"]*")$/', $href, $matches) === 1) {
+            return [$matches['href'], $matches['title']];
+        }
+
+        return [$href, ''];
+    }
+
+    /**
+     * @return array{path: string, query: string, fragment: string}
+     */
+    private function splitHref(string $href): array
+    {
+        $fragment = '';
+        $query = '';
+        $path = $href;
+
+        if (($fragmentPosition = strpos($path, '#')) !== false) {
+            $fragment = substr($path, $fragmentPosition);
+            $path = substr($path, 0, $fragmentPosition);
+        }
+
+        if (($queryPosition = strpos($path, '?')) !== false) {
+            $query = substr($path, $queryPosition);
+            $path = substr($path, 0, $queryPosition);
+        }
+
+        return [
+            'path' => rawurldecode($path),
+            'query' => $query,
+            'fragment' => $fragment,
+        ];
+    }
+
+    private function isLocalMarkdownHref(string $href): bool
+    {
+        if ($href === '' || str_starts_with($href, '#') || str_starts_with($href, '/')) {
+            return false;
+        }
+
+        return parse_url($href, PHP_URL_SCHEME) === null;
+    }
+
+    private function isMarkdownPath(string $path): bool
+    {
+        return str_ends_with(strtolower(parse_url($path, PHP_URL_PATH) ?? $path), '.md');
+    }
+
+    private function normalizePath(string $path): string
+    {
+        return trim(str_replace('\\', '/', $path), '/');
+    }
+
+    private function normalizeRelativePath(string $fromDirectory, string $path): ?string
+    {
+        $combined = trim($fromDirectory, '/');
+
+        if ($combined !== '') {
+            $combined .= '/';
+        }
+
+        $segments = [];
+
+        foreach (explode('/', $combined.$this->normalizePath($path)) as $segment) {
+            if ($segment === '' || $segment === '.') {
+                continue;
+            }
+
+            if ($segment === '..') {
+                if ($segments === []) {
+                    return null;
+                }
+
+                array_pop($segments);
+
+                continue;
+            }
+
+            $segments[] = $segment;
+        }
+
+        return implode('/', $segments);
+    }
+
+    private function relativePath(string $fromDirectory, string $targetPath): string
+    {
+        $fromSegments = $fromDirectory === '.' ? [] : array_values(array_filter(explode('/', trim($fromDirectory, '/'))));
+        $targetSegments = array_values(array_filter(explode('/', trim($targetPath, '/'))));
+
+        while ($fromSegments !== [] && $targetSegments !== [] && $fromSegments[0] === $targetSegments[0]) {
+            array_shift($fromSegments);
+            array_shift($targetSegments);
+        }
+
+        return implode('/', array_merge(array_fill(0, count($fromSegments), '..'), $targetSegments));
     }
 }

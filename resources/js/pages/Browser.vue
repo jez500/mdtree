@@ -28,9 +28,12 @@ const pageTitle = computed(() => {
         :content="fileContent"
         :workspace="workspace"
         :file-path="filePath"
+        :tree="tree"
         class="h-full"
     />
     <div v-else class="flex h-full items-center justify-center">
-        <p class="text-sm text-gray-500 dark:text-gray-400">Select a file to get started</p>
+        <p class="text-sm text-gray-500 dark:text-gray-400">
+            Select a file to get started
+        </p>
     </div>
 </template>

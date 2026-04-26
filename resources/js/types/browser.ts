@@ -11,3 +11,9 @@ export type Workspace = {
 };
 
 export type WorkspaceMap = Record<string, Workspace>;
+
+export type SearchResult = {
+    title: string;
+    path: string;
+    excerpt: string;
+};
