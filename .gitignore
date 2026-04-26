@@ -12,6 +12,7 @@
 /vendor
 /storage/database.sqlite
 /storage/notes
+/test-results
 .DS_Store
 .env
 .env.backup

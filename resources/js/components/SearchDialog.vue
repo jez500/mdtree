@@ -106,7 +106,7 @@ function openResult(path: string) {
 <template>
     <Dialog :open="open" @update:open="emits('update:open', $event)">
         <DialogContent
-            class="top-[18%] translate-y-0 gap-0 overflow-hidden p-0 sm:max-w-2xl"
+            class="mt-[18vh] gap-0 self-start overflow-hidden p-0 sm:max-w-2xl"
             :show-close-button="false"
         >
             <DialogHeader class="sr-only">

@@ -16,5 +16,7 @@ storage/framework/sessions
 storage/framework/views
 storage/database.sqlite
 
+test-results
+
 npm-debug.log
 yarn-error.log
