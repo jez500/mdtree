@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Services\FileTreeService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class FileController extends Controller
 {
@@ -47,6 +48,40 @@ class FileController extends Controller
         abort_unless($created, 422, 'Failed to create file.');
 
         return response()->json(['created' => true]);
+    }
+
+    public function uploadImage(string $workspace, Request $request): JsonResponse
+    {
+        $workspaceConfig = $this->workspaceConfig($workspace);
+
+        $validated = $request->validate([
+            'image' => ['required', 'file', 'mimes:jpg,jpeg,png,gif,webp,bmp', 'max:10240'],
+            'current_path' => ['required', 'string'],
+        ]);
+
+        $assetPath = $this->fileTreeService->storeImageAsset($workspaceConfig['path'], $validated['image']);
+
+        abort_if($assetPath === null, 422, 'Failed to upload image.');
+
+        return response()->json([
+            'src' => $this->fileTreeService->relativePathFromFile($validated['current_path'], $assetPath),
+            'path' => $assetPath,
+        ]);
+    }
+
+    public function showAsset(string $workspace, Request $request): BinaryFileResponse
+    {
+        $workspaceConfig = $this->workspaceConfig($workspace);
+
+        $validated = $request->validate([
+            'path' => ['required', 'string'],
+        ]);
+
+        $assetPath = $this->fileTreeService->assetPath($workspaceConfig['path'], $validated['path']);
+
+        abort_if($assetPath === null, 404);
+
+        return response()->file($assetPath);
     }
 
     public function deleteFile(string $workspace, Request $request): JsonResponse

@@ -4,19 +4,21 @@ import AppShell from '@/components/AppShell.vue';
 import BrowserSidebar from '@/components/BrowserSidebar.vue';
 import AppSidebarHeader from '@/components/AppSidebarHeader.vue';
 import { Toaster } from '@/components/ui/sonner';
-
 </script>
 
 <template>
     <AppShell variant="sidebar">
         <BrowserSidebar />
 
-        <AppContent variant="sidebar" class="flex h-svh min-h-0 flex-col overflow-hidden">
+        <AppContent
+            variant="sidebar"
+            class="flex h-svh min-h-0 flex-col overflow-hidden"
+        >
             <AppSidebarHeader>
                 <div id="browser-header-slot" class="min-w-0 flex-1" />
                 <slot name="header" />
             </AppSidebarHeader>
-            <div class="layout-scrollarea min-h-0 flex-1 ">
+            <div class="layout-scrollarea min-h-0 flex-1 overflow-y-auto">
                 <slot />
             </div>
         </AppContent>

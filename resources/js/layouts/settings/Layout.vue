@@ -29,24 +29,21 @@ const { isCurrentOrParentUrl } = useCurrentUrl();
 </script>
 
 <template>
-    <div class="px-4 py-6">
+    <div class="mx-auto w-full max-w-5xl px-4 py-6 md:px-8">
         <Heading
             title="Settings"
             description="Manage your profile and account settings"
         />
 
-        <div class="flex flex-col lg:flex-row lg:space-x-12">
-            <aside class="w-full max-w-xl lg:w-48">
-                <nav
-                    class="flex flex-col space-y-1 space-x-0"
-                    aria-label="Settings"
-                >
+        <div class="flex flex-col gap-8 lg:flex-row lg:gap-12">
+            <aside class="w-full lg:w-48 lg:shrink-0">
+                <nav class="flex gap-1 border-b pb-4" aria-label="Settings">
                     <Button
                         v-for="item in sidebarNavItems"
                         :key="toUrl(item.href)"
                         variant="ghost"
                         :class="[
-                            'w-full justify-start',
+                            'w justify-start',
                             { 'bg-muted': isCurrentOrParentUrl(item.href) },
                         ]"
                         as-child
@@ -61,7 +58,7 @@ const { isCurrentOrParentUrl } = useCurrentUrl();
 
             <Separator class="my-6 lg:hidden" />
 
-            <div class="flex-1 md:max-w-2xl">
+            <div class="min-w-0 flex-1">
                 <section class="max-w-xl space-y-12">
                     <slot />
                 </section>

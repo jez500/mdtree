@@ -74,37 +74,6 @@ Extensions to include from the start:
 
 ---
 
-## Recommended Initial Approach
-
-### Phase 1 — Skeleton
-
-1. `php artisan make:model Workspace -m` — workspace table
-2. Seed two example workspaces pointing to local directories
-3. Workspace switcher in the nav (dropdown)
-4. Active workspace stored in `session('workspace_id')`
-
-### Phase 2 — File Tree
-
-5. `FileTreeService` that walks the root path and returns a nested array
-6. `TreeController@show` — returns the tree via Inertia prop
-7. Sidebar Vue component renders the tree with collapsible folders
-8. Click a file → navigate to `/editor?path=...`
-
-### Phase 3 — Editor
-
-9. `FileController@show` and `@update` — read/write Markdown
-10. TipTap Vue component, initialised with the file's Markdown
-11. Debounced auto-save (1 s after last keystroke) + `Cmd/Ctrl+S`
-12. Unsaved changes indicator in the tab/title
-
-### Phase 4 — Polish
-
-13. Create / rename / delete file via right-click context menu on the tree
-14. Breadcrumb trail above the editor
-15. Keyboard shortcut to focus the search/filter input in the sidebar
-16. Dark mode (Tailwind `dark:` variants)
-
----
 
 ## Security Considerations
 
@@ -134,18 +103,6 @@ npm install @tiptap/vue-3 @tiptap/starter-kit \
 
 ---
 
-## Open Questions / Decisions
-
-| Question | Recommendation |
-|---|---|
-| Multi-user or single-user? | Start single-user; add auth later via Fortify |
-| Workspace paths configured in DB or `.env`? | DB — easier to add/remove at runtime |
-| Image handling? | Serve images as static files from the workspace root |
-| Internal wiki links `[[...]]`? | TipTap custom extension; implement in Phase 4 |
-| Search across all files? | Simple `grep` via `Process::run()` for now; full-text index later |
-
----
-
 ## Docker
 
 Build the image with your requested tag:
@@ -157,7 +114,7 @@ docker build -t jez500/mdtree .
 Run the container:
 
 ```bash
-docker run --rm -p 8000:80 --name mdtree jez500/mdtree
+docker run --rm -p 8000:80 --name mdtree -v ./storage:/var/www/html/storage jez500/mdtree
 ```
 
 Open the app at `http://localhost:8000`.
@@ -166,3 +123,7 @@ Notes:
 
 - On first boot, the container copies `.env.example` to `.env`, generates `APP_KEY`, and runs migrations automatically.
 - Data is stored in `database/database.sqlite` inside the container. Mount a volume if you want persistence across container recreations.
+
+## Troubleshooting
+
+* Read only db errors: Ensure `storage/database.sqlite` and `storage` are writable by the web server user.

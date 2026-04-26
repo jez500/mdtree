@@ -2,11 +2,14 @@
 
 namespace App\Http\Middleware;
 
+use App\Services\FileTreeService;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
 class HandleInertiaRequests extends Middleware
 {
+    public function __construct(private readonly FileTreeService $fileTreeService) {}
+
     /**
      * The root template that's loaded on the first page visit.
      *
@@ -37,11 +40,39 @@ class HandleInertiaRequests extends Middleware
     {
         return [
             ...parent::share($request),
+            ...$this->browserProps($request),
             'name' => config('app.name'),
             'auth' => [
                 'user' => $request->user(),
             ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function browserProps(Request $request): array
+    {
+        if ($request->user() === null) {
+            return [];
+        }
+
+        $workspaces = config('mdtree.workspaces');
+        $workspace = $request->route('workspace') ?? array_key_first($workspaces);
+
+        if (! is_string($workspace) || ! isset($workspaces[$workspace])) {
+            $workspace = array_key_first($workspaces);
+        }
+
+        return [
+            'workspace' => $workspace,
+            'workspaces' => $workspaces,
+            'tree' => $this->fileTreeService->tree(
+                $workspaces[$workspace]['path'],
+                config('mdtree.extensions'),
+            ),
+            'filePath' => null,
         ];
     }
 }

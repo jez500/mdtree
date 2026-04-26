@@ -10,6 +10,11 @@ import { Check, FileText, Link2, Loader2, X } from 'lucide-vue-next';
 import { Editor as NovelEditor } from 'novel-vue';
 import { computed, nextTick, ref, watch } from 'vue';
 import { resolveLink } from '@/actions/App/Http/Controllers/BrowserController';
+import {
+    showAsset,
+    uploadImage,
+} from '@/actions/App/Http/Controllers/FileController';
+import { WorkspaceImage } from '@/extensions/workspaceImages';
 import { save as saveFileRoute } from '@/routes/files';
 import type { FileTreeNode } from '@/types/browser';
 import TableBubbleMenu from './TableBubbleMenu.vue';
@@ -49,6 +54,16 @@ const tableExtensions = [
     TableHeader,
     TableCell,
 ];
+const editorExtensions = [
+    ...tableExtensions,
+    WorkspaceImage.configure({
+        HTMLAttributes: {
+            class: 'my-4 max-w-full rounded-md border border-border',
+        },
+        resolveSrc: (src: string) => resolveImageSrc(src),
+        uploadImage: (file: File) => uploadWorkspaceImage(file),
+    }),
+];
 const markdownDocuments = computed(() => flattenMarkdownFiles(props.tree));
 
 watch(
@@ -64,14 +79,52 @@ watch(
             transactionTick.value++;
         });
 
+        ed.view.dom.addEventListener('click', (event: MouseEvent) => {
+            const anchor =
+                event.target instanceof Element
+                    ? event.target.closest('a')
+                    : null;
+
+            if (!(anchor instanceof HTMLAnchorElement)) {
+                return;
+            }
+
+            const href = anchor.getAttribute('href') ?? '';
+
+            if (/^https?:\/\//i.test(href)) {
+                return;
+            }
+
+            event.preventDefault();
+            event.stopPropagation();
+
+            if (isLocalMarkdownHref(href) && isMarkdownPath(href)) {
+                router.visit(
+                    resolveLink.url(
+                        { workspace: props.workspace },
+                        {
+                            query: {
+                                from: props.filePath,
+                                href,
+                            },
+                        },
+                    ),
+                );
+            } else {
+                router.visit(href);
+            }
+        }, true);
+
         // novel-vue's internal watchEffect fires synchronously in the same flush
         // batch and sets its default/localStorage content. Yield to that flush
         // first, then override with the actual file content.
         await nextTick();
 
         suppressSave = true;
-        ed.commands.setContent(props.content ?? '', false);
-        rawContent.value = getMarkdownFrom(ed as TiptapEditor);
+        const tiptapEditor = ed as TiptapEditor;
+        tiptapEditor.commands.setContent(props.content ?? '', false);
+        rawContent.value = getMarkdownFrom(tiptapEditor);
+        await scrollEditorToTop(tiptapEditor);
         suppressSave = false;
     },
     { immediate: true },
@@ -123,6 +176,48 @@ function xsrfToken(): string {
     return match ? decodeURIComponent(match[1]) : '';
 }
 
+async function uploadWorkspaceImage(file: File): Promise<string> {
+    const formData = new FormData();
+    formData.append('image', file);
+    formData.append('current_path', props.filePath);
+
+    const response = await fetch(
+        uploadImage.url({ workspace: props.workspace }),
+        {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: {
+                Accept: 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-TOKEN': csrfToken(),
+                'X-XSRF-TOKEN': xsrfToken(),
+            },
+            body: formData,
+        },
+    );
+
+    if (!response.ok) {
+        throw new Error(`Failed to upload image (${response.status})`);
+    }
+
+    const payload = (await response.json()) as { src: string };
+
+    return payload.src;
+}
+
+function resolveImageSrc(src: string): string {
+    const assetPath = resolveLocalImagePath(props.filePath, src);
+
+    if (assetPath === null) {
+        return src;
+    }
+
+    return showAsset.url(
+        { workspace: props.workspace },
+        { query: { path: assetPath } },
+    );
+}
+
 function getMarkdownFrom(editor: TiptapEditor): string {
     const holder = editor as unknown as {
         storage?: Record<string, { getMarkdown?: () => string }>;
@@ -148,7 +243,7 @@ const handleUpdate = (editor?: TiptapEditor) => {
 
 watch(
     () => [props.content, props.filePath],
-    ([newContent], [, oldPath]) => {
+    async ([newContent], [, oldPath]) => {
         const ed = activeEditor.value;
 
         if (!ed) {
@@ -164,6 +259,7 @@ watch(
         ed.commands.setContent(next, false);
         rawContent.value = next;
         saveStatus.value = 'saved';
+        await scrollEditorToTop(ed);
         suppressSave = false;
     },
 );
@@ -284,17 +380,39 @@ const runCommand = (name: string, ...args: unknown[]): void => {
 };
 
 const layoutScrollArea = ref<HTMLElement | null>(null);
-router.on('success', (event) => {
-    nextTick(() => {
-        if (event?.detail?.page?.url.startsWith('/browser')) {
-            layoutScrollArea.value?.scrollTo({
+async function scrollEditorToTop(editor: TiptapEditor): Promise<void> {
+    await nextTick();
+
+    const resetEditorPosition = (): void => {
+        editor.commands.setTextSelection(1);
+
+        for (const element of scrollContainers()) {
+            element.scrollTo({
                 top: 0,
                 left: 0,
                 behavior: 'auto',
             });
         }
-    });
-});
+    };
+
+    resetEditorPosition();
+    requestAnimationFrame(resetEditorPosition);
+
+    for (const delay of [50, 150, 300]) {
+        window.setTimeout(resetEditorPosition, delay);
+    }
+}
+
+function scrollContainers(): HTMLElement[] {
+    return [
+        layoutScrollArea.value,
+        layoutScrollArea.value?.closest<HTMLElement>('.layout-scrollarea') ??
+            null,
+        document.scrollingElement instanceof HTMLElement
+            ? document.scrollingElement
+            : null,
+    ].filter((element): element is HTMLElement => element !== null);
+}
 
 function flattenMarkdownFiles(nodes: FileTreeNode[]): string[] {
     return nodes.flatMap((node) => {
@@ -334,30 +452,56 @@ function isMarkdownPath(href: string): boolean {
     return href.split('#')[0].split('?')[0].toLowerCase().endsWith('.md');
 }
 
-function handleEditorClick(event: MouseEvent) {
-    const target =
-        event.target instanceof Element ? event.target.closest('a') : null;
-
-    if (
-        !(target instanceof HTMLAnchorElement) ||
-        !isLocalMarkdownHref(target.getAttribute('href') ?? '') ||
-        !isMarkdownPath(target.getAttribute('href') ?? '')
-    ) {
-        return;
+function resolveLocalImagePath(fromPath: string, src: string): string | null {
+    if (!isLocalImageSrc(src)) {
+        return null;
     }
 
-    event.preventDefault();
-    router.visit(
-        resolveLink.url(
-            { workspace: props.workspace },
-            {
-                query: {
-                    from: props.filePath,
-                    href: target.getAttribute('href') ?? '',
-                },
-            },
-        ),
+    const path = normalizeRelativePath(
+        fromPath.split('/').slice(0, -1),
+        src.split('#')[0].split('?')[0],
     );
+
+    if (!path?.startsWith('assets/')) {
+        return null;
+    }
+
+    return path;
+}
+
+function isLocalImageSrc(src: string): boolean {
+    if (!src || src.startsWith('#') || src.startsWith('/')) {
+        return false;
+    }
+
+    return !/^[a-z][a-z\d+.-]*:/i.test(src);
+}
+
+function normalizeRelativePath(
+    fromSegments: string[],
+    path: string,
+): string | null {
+    const segments = [...fromSegments];
+
+    for (const segment of path.split('/')) {
+        if (segment === '' || segment === '.') {
+            continue;
+        }
+
+        if (segment === '..') {
+            if (segments.length === 0) {
+                return null;
+            }
+
+            segments.pop();
+
+            continue;
+        }
+
+        segments.push(segment);
+    }
+
+    return segments.join('/');
 }
 </script>
 
@@ -720,12 +864,11 @@ function handleEditorClick(event: MouseEvent) {
         <div
             ref="layoutScrollArea"
             class="editor-wrapper flex-1 overflow-auto pb-1"
-            @click="handleEditorClick"
         >
             <NovelEditor
                 v-show="mode === 'editor'"
                 ref="editorRef"
-                :extensions="tableExtensions"
+                :extensions="editorExtensions"
                 :storage-key="storageKey"
                 :on-update="handleUpdate"
                 class="h-full"

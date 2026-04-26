@@ -13,6 +13,7 @@ mkdir -p bootstrap/cache
 chown -R www-data:www-data storage bootstrap/cache
 chmod -R ug+rwX storage bootstrap/cache
 touch storage/database.sqlite
+chmod 755 storage/database.sqlite
 
 if [ ! -f .env ]; then
     cp .env.example .env

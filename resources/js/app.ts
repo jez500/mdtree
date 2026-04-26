@@ -10,7 +10,9 @@ import { initializeFlashToast } from '@/lib/flashToast';
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 
 const scrollLayoutAreasToTop = (): void => {
-    for (const element of document.querySelectorAll<HTMLElement>('.layout-scrollarea')) {
+    for (const element of document.querySelectorAll<HTMLElement>(
+        '.layout-scrollarea',
+    )) {
         element.scrollTo({ top: 0, left: 0, behavior: 'auto' });
     }
 };
@@ -32,7 +34,7 @@ createInertiaApp({
             case name.startsWith('auth/'):
                 return AuthLayout;
             case name.startsWith('settings/'):
-                return [AppLayout, SettingsLayout];
+                return [BrowserLayout, SettingsLayout];
             default:
                 return AppLayout;
         }

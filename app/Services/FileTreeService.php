@@ -3,6 +3,8 @@
 namespace App\Services;
 
 use DirectoryIterator;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Str;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use SplFileInfo;
@@ -208,6 +210,50 @@ class FileTreeService
         return mkdir($candidate, 0755, true);
     }
 
+    public function storeImageAsset(string $rootPath, UploadedFile $image): ?string
+    {
+        $realRoot = $this->realRoot($rootPath);
+
+        if ($realRoot === null) {
+            return null;
+        }
+
+        $assetsDirectory = $realRoot.DIRECTORY_SEPARATOR.'assets';
+
+        if (! is_dir($assetsDirectory) && ! mkdir($assetsDirectory, 0755, true) && ! is_dir($assetsDirectory)) {
+            return null;
+        }
+
+        $filename = $this->imageAssetName($image);
+        $image->move($assetsDirectory, $filename);
+
+        return 'assets/'.$filename;
+    }
+
+    public function assetPath(string $rootPath, string $relativePath): ?string
+    {
+        $realRoot = $this->realRoot($rootPath);
+
+        if ($realRoot === null) {
+            return null;
+        }
+
+        $candidate = $realRoot.DIRECTORY_SEPARATOR.ltrim($relativePath, '/\\');
+        $realFile = realpath($candidate);
+        $assetsRoot = $realRoot.DIRECTORY_SEPARATOR.'assets'.DIRECTORY_SEPARATOR;
+
+        if ($realFile === false || ! str_starts_with($realFile, $assetsRoot)) {
+            return null;
+        }
+
+        return is_file($realFile) ? $realFile : null;
+    }
+
+    public function relativePathFromFile(string $fromPath, string $targetPath): string
+    {
+        return $this->relativePath(dirname($this->normalizePath($fromPath)), $this->normalizePath($targetPath));
+    }
+
     public function moveNode(string $rootPath, string $fromPath, string $toPath): bool
     {
         $realRoot = $this->realRoot($rootPath);
@@ -321,6 +367,14 @@ class FileTreeService
         }
 
         return $realRoot;
+    }
+
+    private function imageAssetName(UploadedFile $image): string
+    {
+        $name = Str::slug(pathinfo($image->getClientOriginalName(), PATHINFO_FILENAME)) ?: 'image';
+        $extension = strtolower($image->extension() ?: $image->getClientOriginalExtension());
+
+        return $name.'-'.Str::lower(Str::random(10)).'.'.$extension;
     }
 
     private function resolveNewPath(string $realRoot, string $relativePath): ?string

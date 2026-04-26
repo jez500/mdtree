@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\User;
+use Illuminate\Support\Facades\Config;
 
 test('profile page is displayed', function () {
     $user = User::factory()->create();
@@ -10,6 +11,36 @@ test('profile page is displayed', function () {
         ->get(route('profile.edit'));
 
     $response->assertOk();
+});
+
+test('profile page includes browser layout data', function () {
+    $workspaceDir = sys_get_temp_dir().'/mdtree_settings_test_'.uniqid();
+    mkdir($workspaceDir, 0755, true);
+    file_put_contents($workspaceDir.'/profile-notes.md', '# Profile Notes');
+
+    try {
+        Config::set('mdtree.workspaces', [
+            'default' => ['name' => 'Default', 'path' => $workspaceDir],
+        ]);
+        Config::set('mdtree.extensions', ['md']);
+
+        $user = User::factory()->create();
+
+        $this
+            ->actingAs($user)
+            ->get(route('profile.edit'))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->component('settings/Profile')
+                ->where('workspace', 'default')
+                ->where('workspaces.default.name', 'Default')
+                ->where('tree.0.path', 'profile-notes.md')
+                ->where('filePath', null)
+            );
+    } finally {
+        unlink($workspaceDir.'/profile-notes.md');
+        rmdir($workspaceDir);
+    }
 });
 
 test('profile information can be updated', function () {
