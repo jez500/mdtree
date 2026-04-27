@@ -85,6 +85,23 @@ docker run --rm -p 8000:80 \
   mdtree
 ```
 
+```yaml
+services:
+  mdtree:
+    image: jez500/mdtree:latest
+    container_name: mdtree
+    user: "1000:1000"
+    ports:
+      - 8002:80
+    volumes:
+      - ./storage:/var/www/html/storage
+      - ./.env:/var/www/html/.env
+      - /path/to/host/projects:/workspaces/projects
+    environment:
+      MDTREE_DEFAULT_NAME: "Projects"
+      MDTREE_DEFAULT_PATH: "/workspaces/projects"
+```
+
 On first boot the container copies `.env.example`, generates an app key, and runs migrations automatically. The SQLite database lives at `storage/database.sqlite` — mount a volume to persist it.
 
 ---

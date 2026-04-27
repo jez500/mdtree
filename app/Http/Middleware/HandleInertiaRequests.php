@@ -68,7 +68,7 @@ class HandleInertiaRequests extends Middleware
         return [
             'workspace' => $workspace,
             'workspaces' => $workspaces,
-            'tree' => $this->fileTreeService->tree(
+            'tree' => fn () => $this->fileTreeService->cachedTree(
                 $workspaces[$workspace]['path'],
                 config('mdtree.extensions'),
             ),

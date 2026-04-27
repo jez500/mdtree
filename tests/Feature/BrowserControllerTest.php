@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\User;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Config;
 
 beforeEach(function () {
@@ -39,6 +40,10 @@ test('browser index redirects to first workspace', function () {
 test('browser show renders the browser page', function () {
     file_put_contents($this->workspaceDir.'/hello.md', '# Hello');
 
+    Cache::shouldReceive('remember')
+        ->once()
+        ->andReturnUsing(fn (string $key, mixed $ttl, callable $callback) => $callback());
+
     $this->get('/browser/test')
         ->assertOk()
         ->assertInertia(fn ($page) => $page
@@ -48,6 +53,25 @@ test('browser show renders the browser page', function () {
             ->where('workspace', 'test')
             ->where('filePath', null)
             ->where('fileContent', null)
+        );
+});
+
+test('browser show supports partial reloads without reloading the tree', function () {
+    file_put_contents($this->workspaceDir.'/hello.md', '# Hello World');
+
+    Cache::shouldReceive('remember')
+        ->once()
+        ->andReturnUsing(fn (string $key, mixed $ttl, callable $callback) => $callback());
+
+    $this->get('/browser/test?path=hello.md')
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->has('tree')
+            ->reloadOnly(['filePath', 'fileContent'], fn ($reload) => $reload
+                ->missing('tree')
+                ->where('filePath', 'hello.md')
+                ->where('fileContent', '# Hello World')
+            )
         );
 });
 

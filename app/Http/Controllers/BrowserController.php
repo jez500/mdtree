@@ -28,29 +28,37 @@ class BrowserController extends Controller
         abort_unless(isset($workspaces[$workspace]), 404);
 
         $workspaceConfig = $workspaces[$workspace];
-        $extensions = config('mdtree.extensions');
 
-        $tree = $this->fileTreeService->tree($workspaceConfig['path'], $extensions);
+        $fileData = null;
+        $resolveFileData = function () use (&$fileData, $workspaceConfig, $request): array {
+            if ($fileData !== null) {
+                return $fileData;
+            }
 
-        $filePath = $request->query('path');
+            $filePath = $request->query('path');
 
-        if ($filePath === null) {
-            $filePath = $this->fileTreeService->findReadme($workspaceConfig['path']);
-        }
+            if ($filePath === null) {
+                $filePath = $this->fileTreeService->findReadme($workspaceConfig['path']);
+            }
 
-        $fileContent = null;
+            $fileContent = null;
 
-        if ($filePath !== null) {
-            $fileContent = $this->fileTreeService->readFile($workspaceConfig['path'], $filePath);
-            abort_if($fileContent === null, 404);
-        }
+            if ($filePath !== null) {
+                $fileContent = $this->fileTreeService->readFile($workspaceConfig['path'], $filePath);
+                abort_if($fileContent === null, 404);
+            }
+
+            return $fileData = [
+                'filePath' => $filePath,
+                'fileContent' => $fileContent,
+            ];
+        };
 
         return Inertia::render('Browser', [
             'workspace' => $workspace,
             'workspaces' => $workspaces,
-            'tree' => $tree,
-            'filePath' => $filePath,
-            'fileContent' => $fileContent,
+            'filePath' => fn () => $resolveFileData()['filePath'],
+            'fileContent' => fn () => $resolveFileData()['fileContent'],
         ]);
     }
 

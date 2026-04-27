@@ -161,7 +161,9 @@ function submitMove(fromPath: string, toPath: string) {
             ) {
                 router.visit(fileUrl(nextActivePath), {
                     preserveScroll: true,
+                    preserveState: true,
                     replace: true,
+                    only: ['tree', 'filePath', 'fileContent'],
                 });
 
                 return;
@@ -200,11 +202,11 @@ function handleCreated(path: string) {
     closeDialog();
 
     if (mode === 'createFile') {
-        router.reload({
-            only: ['tree'],
-            onSuccess: () => {
-                router.visit(fileUrl(path), { preserveScroll: true });
-            },
+        router.visit(fileUrl(path), {
+            preserveScroll: true,
+            preserveState: true,
+            replace: true,
+            only: ['tree', 'filePath', 'fileContent'],
         });
 
         return;
@@ -222,6 +224,9 @@ function handleDeleted() {
     if (shouldGoToRoot) {
         router.visit(show.url({ workspace: props.workspace }), {
             preserveScroll: true,
+            preserveState: true,
+            replace: true,
+            only: ['tree', 'filePath', 'fileContent'],
         });
 
         return;

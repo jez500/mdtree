@@ -4,6 +4,7 @@ namespace App\Services;
 
 use DirectoryIterator;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
@@ -19,13 +20,44 @@ class FileTreeService
      */
     public function tree(string $rootPath, array $extensions): array
     {
+        return $this->cachedTree($rootPath, $extensions);
+    }
+
+    /**
+     * Build and cache a recursive file tree for a workspace root.
+     *
+     * @param  string[]  $extensions
+     * @return array<int, array{name: string, type: string, path: string, children?: array}>
+     */
+    public function cachedTree(string $rootPath, array $extensions): array
+    {
         $realRoot = realpath($rootPath);
 
         if ($realRoot === false || ! is_dir($realRoot)) {
             return [];
         }
 
-        return $this->buildTree($realRoot, $realRoot, $extensions);
+        return Cache::remember(
+            $this->treeCacheKey($realRoot, $extensions),
+            now()->addMinutes(5),
+            fn () => $this->buildTree($realRoot, $realRoot, $extensions),
+        );
+    }
+
+    /**
+     * Forget a cached tree for a workspace root.
+     *
+     * @param  string[]  $extensions
+     */
+    public function forgetTreeCache(string $rootPath, array $extensions): void
+    {
+        $realRoot = realpath($rootPath);
+
+        if ($realRoot === false || ! is_dir($realRoot)) {
+            return;
+        }
+
+        Cache::forget($this->treeCacheKey($realRoot, $extensions));
     }
 
     /**
@@ -367,6 +399,24 @@ class FileTreeService
         }
 
         return $realRoot;
+    }
+
+    /**
+     * @param  string[]  $extensions
+     */
+    private function treeCacheKey(string $realRoot, array $extensions): string
+    {
+        $normalizedExtensions = array_values(array_filter(
+            array_map(
+                static fn (string $extension): string => strtolower(trim($extension)),
+                $extensions,
+            ),
+            static fn (string $extension): bool => $extension !== '',
+        ));
+
+        sort($normalizedExtensions);
+
+        return 'mdtree.tree.'.sha1($realRoot.'|'.implode(',', $normalizedExtensions));
     }
 
     private function imageAssetName(UploadedFile $image): string

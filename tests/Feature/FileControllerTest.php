@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\User;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Config;
 
 beforeEach(function () {
@@ -85,6 +86,8 @@ test('file save requires authentication', function () {
 });
 
 test('file create creates a file', function () {
+    Cache::shouldReceive('forget')->once();
+
     $this->postJson('/api/files/test/create', [
         'path' => 'notes/new.md',
     ])
@@ -109,6 +112,8 @@ test('file create rejects existing files', function () {
 });
 
 test('directory create creates a directory', function () {
+    Cache::shouldReceive('forget')->once();
+
     $this->postJson('/api/directories/test', [
         'path' => 'notes/archive',
     ])
@@ -126,6 +131,8 @@ test('directory create rejects traversal attempts', function () {
 
 test('file delete deletes a file', function () {
     file_put_contents($this->workspaceDir.'/notes.md', '# Notes');
+
+    Cache::shouldReceive('forget')->once();
 
     $this->deleteJson('/api/files/test', [
         'path' => 'notes.md',
@@ -145,6 +152,8 @@ test('file delete rejects traversal attempts', function () {
 test('node move moves a file', function () {
     file_put_contents($this->workspaceDir.'/notes.md', '# Notes');
     mkdir($this->workspaceDir.'/archive', 0755, true);
+
+    Cache::shouldReceive('forget')->once();
 
     $this->patchJson('/api/files/test', [
         'from' => 'notes.md',

@@ -114,6 +114,7 @@ function allowDrop(event: DragEvent) {
                     class="relative flex w-full items-center rounded py-1 pr-2 text-sidebar-foreground/70 no-underline hover:bg-sidebar-accent hover:text-sidebar-foreground"
                     :class="activePath === node.path ? 'bg-sidebar-accent font-medium text-sidebar-foreground' : ''"
                     :style="{ paddingLeft: `${8 + depth * 16 + 18}px` }"
+                    :only="['filePath', 'fileContent']"
                     preserve-state
                     preserve-scroll
                     draggable="true"

@@ -2,6 +2,7 @@
 
 use App\Models\User;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Config;
 
 beforeEach(function () {
@@ -29,6 +30,8 @@ afterEach(function () {
 });
 
 test('image upload stores images in workspace assets directory', function () {
+    Cache::shouldReceive('forget')->once();
+
     $response = $this->postJson('/api/files/test/images', [
         'current_path' => 'notes/current.md',
         'image' => UploadedFile::fake()->create('Screenshot One.png', 4, 'image/png'),

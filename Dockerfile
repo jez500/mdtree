@@ -17,7 +17,8 @@ RUN apk add --no-cache nodejs npm
 RUN apk add --no-cache sqlite-dev $PHPIZE_DEPS && docker-php-ext-install pdo_sqlite
 
 COPY package.json package-lock.json ./
-RUN npm ci
+RUN npm ci \
+    npm run build
 
 COPY . .
 RUN rm -f bootstrap/cache/*.php

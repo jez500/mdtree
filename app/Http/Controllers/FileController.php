@@ -47,6 +47,8 @@ class FileController extends Controller
 
         abort_unless($created, 422, 'Failed to create file.');
 
+        $this->forgetTreeCache($workspaceConfig['path']);
+
         return response()->json(['created' => true]);
     }
 
@@ -62,6 +64,8 @@ class FileController extends Controller
         $assetPath = $this->fileTreeService->storeImageAsset($workspaceConfig['path'], $validated['image']);
 
         abort_if($assetPath === null, 422, 'Failed to upload image.');
+
+        $this->forgetTreeCache($workspaceConfig['path']);
 
         return response()->json([
             'src' => $this->fileTreeService->relativePathFromFile($validated['current_path'], $assetPath),
@@ -96,6 +100,8 @@ class FileController extends Controller
 
         abort_unless($deleted, 422, 'Failed to delete file.');
 
+        $this->forgetTreeCache($workspaceConfig['path']);
+
         return response()->json(['deleted' => true]);
     }
 
@@ -110,6 +116,8 @@ class FileController extends Controller
         $created = $this->fileTreeService->createDirectory($workspaceConfig['path'], $validated['path']);
 
         abort_unless($created, 422, 'Failed to create directory.');
+
+        $this->forgetTreeCache($workspaceConfig['path']);
 
         return response()->json(['created' => true]);
     }
@@ -127,6 +135,8 @@ class FileController extends Controller
 
         abort_unless($moved, 422, 'Failed to move node.');
 
+        $this->forgetTreeCache($workspaceConfig['path']);
+
         return response()->json(['moved' => true]);
     }
 
@@ -140,5 +150,10 @@ class FileController extends Controller
         abort_unless(isset($workspaces[$workspace]), 404);
 
         return $workspaces[$workspace];
+    }
+
+    private function forgetTreeCache(string $rootPath): void
+    {
+        $this->fileTreeService->forgetTreeCache($rootPath, config('mdtree.extensions'));
     }
 }
