@@ -41,7 +41,8 @@ COPY --from=build /app/vendor ./vendor
 COPY --from=build /app/public/build ./public/build
 
 RUN rm -f bootstrap/cache/*.php
-RUN chown -R www-data:www-data storage bootstrap/cache database
+RUN chown -R www-data:www-data storage bootstrap/cache database \
+    && chmod -R ug+rwX,o+w storage bootstrap/cache
 RUN chmod +x docker/start.sh
 
 EXPOSE 80
