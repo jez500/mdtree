@@ -20,3 +20,7 @@ test-results
 
 npm-debug.log
 yarn-error.log
+
+/resources/js/actions
+/resources/js/routes
+/resources/js/wayfinder
