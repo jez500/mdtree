@@ -3,12 +3,16 @@
 namespace App\Http\Middleware;
 
 use App\Services\FileTreeService;
+use App\Services\WorkspaceService;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
 class HandleInertiaRequests extends Middleware
 {
-    public function __construct(private readonly FileTreeService $fileTreeService) {}
+    public function __construct(
+        private readonly FileTreeService $fileTreeService,
+        private readonly WorkspaceService $workspaceService,
+    ) {}
 
     /**
      * The root template that's loaded on the first page visit.
@@ -58,7 +62,7 @@ class HandleInertiaRequests extends Middleware
             return [];
         }
 
-        $workspaces = config('mdtree.workspaces');
+        $workspaces = $this->workspaceService->all();
         $workspace = $request->route('workspace') ?? array_key_first($workspaces);
 
         if (! is_string($workspace) || ! isset($workspaces[$workspace])) {

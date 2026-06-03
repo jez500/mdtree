@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\User;
+use App\Models\Workspace;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Config;
@@ -11,6 +12,14 @@ beforeEach(function () {
 
     Config::set('mdtree.workspaces', [
         'test' => ['name' => 'Test', 'path' => $this->workspaceDir],
+    ]);
+
+    Cache::flush();
+
+    Workspace::create([
+        'slug' => 'test',
+        'name' => 'Test',
+        'path' => $this->workspaceDir,
     ]);
 
     $this->actingAs(User::factory()->create());

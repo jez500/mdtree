@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
-import { ChevronsUpDown } from 'lucide-vue-next';
+import { ChevronsUpDown, Settings } from 'lucide-vue-next';
 import { computed } from 'vue';
 import { show } from '@/actions/App/Http/Controllers/BrowserController';
+import { edit } from '@/routes/workspaces';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -60,6 +61,15 @@ const currentWorkspaceName = computed(() => props.workspaces[props.workspace]?.n
                     >
                         <Link :href="show.url({ workspace: key })">
                             {{ ws.name }}
+                        </Link>
+                    </DropdownMenuItem>
+
+                    <DropdownMenuSeparator />
+
+                    <DropdownMenuItem as-child>
+                        <Link :href="edit.url()" class="flex items-center gap-2">
+                            <Settings class="size-4" />
+                            Manage workspaces
                         </Link>
                     </DropdownMenuItem>
                 </DropdownMenuContent>

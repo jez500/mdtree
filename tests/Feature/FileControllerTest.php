@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\User;
+use App\Models\Workspace;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Config;
 
@@ -14,6 +15,14 @@ beforeEach(function () {
         'test' => ['name' => 'Test', 'path' => $this->workspaceDir],
     ]);
     Config::set('mdtree.extensions', ['md', 'txt']);
+
+    Cache::flush();
+
+    Workspace::create([
+        'slug' => 'test',
+        'name' => 'Test',
+        'path' => $this->workspaceDir,
+    ]);
 
     $this->user = User::factory()->create();
     $this->actingAs($this->user);

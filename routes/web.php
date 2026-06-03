@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\BrowserController;
 use App\Http\Controllers\FileController;
+use App\Http\Controllers\WorkspaceController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('auth')->group(function () {
@@ -20,6 +21,11 @@ Route::middleware('auth')->group(function () {
     Route::delete('/api/files/{workspace}', [FileController::class, 'deleteFile'])->name('files.delete');
     Route::post('/api/directories/{workspace}', [FileController::class, 'createDirectory'])->name('directories.create');
     Route::patch('/api/files/{workspace}', [FileController::class, 'moveNode'])->name('files.move');
+
+    Route::get('/api/workspaces', [WorkspaceController::class, 'index'])->name('workspaces.index');
+    Route::post('/api/workspaces', [WorkspaceController::class, 'store'])->name('workspaces.store');
+    Route::put('/api/workspaces/{workspace}', [WorkspaceController::class, 'update'])->name('workspaces.update');
+    Route::delete('/api/workspaces/{workspace}', [WorkspaceController::class, 'destroy'])->name('workspaces.destroy');
 });
 
 require __DIR__.'/settings.php';

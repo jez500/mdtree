@@ -3,17 +3,21 @@
 namespace App\Http\Controllers;
 
 use App\Services\FileTreeService;
+use App\Services\WorkspaceService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class FileController extends Controller
 {
-    public function __construct(private readonly FileTreeService $fileTreeService) {}
+    public function __construct(
+        private readonly FileTreeService $fileTreeService,
+        private readonly WorkspaceService $workspaceService,
+    ) {}
 
     public function save(string $workspace, Request $request): JsonResponse
     {
-        $workspaces = config('mdtree.workspaces');
+        $workspaces = $this->workspaceService->all();
 
         abort_unless(isset($workspaces[$workspace]), 404);
 
@@ -145,7 +149,7 @@ class FileController extends Controller
      */
     private function workspaceConfig(string $workspace): array
     {
-        $workspaces = config('mdtree.workspaces');
+        $workspaces = $this->workspaceService->all();
 
         abort_unless(isset($workspaces[$workspace]), 404);
 

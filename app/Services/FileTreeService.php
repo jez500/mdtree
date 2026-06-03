@@ -9,6 +9,7 @@ use Illuminate\Support\Str;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use SplFileInfo;
+use UnexpectedValueException;
 
 class FileTreeService
 {
@@ -357,7 +358,17 @@ class FileTreeService
         $folders = [];
         $files = [];
 
-        foreach (new DirectoryIterator($currentPath) as $item) {
+        if (! is_readable($currentPath)) {
+            return [];
+        }
+
+        try {
+            $iterator = new DirectoryIterator($currentPath);
+        } catch (UnexpectedValueException $e) {
+            return [];
+        }
+
+        foreach ($iterator as $item) {
             if ($item->isDot() || str_starts_with($item->getFilename(), '.')) {
                 continue;
             }
@@ -492,6 +503,7 @@ class FileTreeService
         $files = [];
         $iterator = new RecursiveIteratorIterator(
             new RecursiveDirectoryIterator($realRoot, RecursiveDirectoryIterator::SKIP_DOTS),
+            flags: RecursiveIteratorIterator::CATCH_GET_CHILD,
         );
 
         foreach ($iterator as $file) {
@@ -513,7 +525,17 @@ class FileTreeService
     {
         $files = [];
 
-        foreach (new DirectoryIterator($realRoot) as $item) {
+        if (! is_readable($realRoot)) {
+            return [];
+        }
+
+        try {
+            $iterator = new DirectoryIterator($realRoot);
+        } catch (UnexpectedValueException $e) {
+            return [];
+        }
+
+        foreach ($iterator as $item) {
             if ($item->isDot() || str_starts_with($item->getFilename(), '.')) {
                 continue;
             }

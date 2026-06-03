@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Services\FileTreeService;
+use App\Services\WorkspaceService;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
@@ -15,7 +17,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->singleton(WorkspaceService::class, function ($app) {
+            return new WorkspaceService($app->make(FileTreeService::class));
+        });
     }
 
     /**
@@ -24,6 +28,10 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->configureDefaults();
+
+        $this->app->booting(function () {
+            $this->app->make(WorkspaceService::class)->seedDefaults();
+        });
     }
 
     /**

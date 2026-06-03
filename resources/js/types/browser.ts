@@ -10,6 +10,13 @@ export type Workspace = {
     path: string;
 };
 
+export type WorkspaceWithId = {
+    id: number;
+    slug: string;
+    name: string;
+    path: string;
+};
+
 export type WorkspaceMap = Record<string, Workspace>;
 
 export type SearchResult = {

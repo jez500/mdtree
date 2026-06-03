@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Services\FileTreeService;
+use App\Services\WorkspaceService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -12,18 +13,21 @@ use Inertia\Response;
 
 class BrowserController extends Controller
 {
-    public function __construct(private readonly FileTreeService $fileTreeService) {}
+    public function __construct(
+        private readonly FileTreeService $fileTreeService,
+        private readonly WorkspaceService $workspaceService,
+    ) {}
 
     public function index(): RedirectResponse
     {
-        $firstWorkspace = array_key_first(config('mdtree.workspaces'));
+        $firstWorkspace = array_key_first($this->workspaceService->all());
 
         return redirect()->route('browser.show', ['workspace' => $firstWorkspace]);
     }
 
     public function show(string $workspace, Request $request): Response
     {
-        $workspaces = config('mdtree.workspaces');
+        $workspaces = $this->workspaceService->all();
 
         abort_unless(isset($workspaces[$workspace]), 404);
 
@@ -64,7 +68,7 @@ class BrowserController extends Controller
 
     public function search(string $workspace, Request $request): JsonResponse
     {
-        $workspaces = config('mdtree.workspaces');
+        $workspaces = $this->workspaceService->all();
 
         abort_unless(isset($workspaces[$workspace]), 404);
 
@@ -83,7 +87,7 @@ class BrowserController extends Controller
 
     public function resolveLink(string $workspace, Request $request): RedirectResponse
     {
-        $workspaces = config('mdtree.workspaces');
+        $workspaces = $this->workspaceService->all();
 
         abort_unless(isset($workspaces[$workspace]), 404);
 
