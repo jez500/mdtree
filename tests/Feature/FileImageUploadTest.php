@@ -39,6 +39,7 @@ afterEach(function () {
 });
 
 test('image upload stores images in workspace assets directory', function () {
+    Cache::shouldReceive('remember')->andReturnUsing(fn ($key, $ttl, $callback) => $callback());
     Cache::shouldReceive('forget')->once();
 
     $response = $this->postJson('/api/files/test/images', [

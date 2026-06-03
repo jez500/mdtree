@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::middleware('auth')->group(function () {
     Route::redirect('/', '/browser')->name('home');
-    Route::redirect('/dashboard', '/browser')->name('dasshboard.home');
+    Route::redirect('/dashboard', '/browser')->name('dashboard');
 
     Route::get('/browser', [BrowserController::class, 'index'])->name('browser.index');
     Route::get('/browser/{workspace}/links', [BrowserController::class, 'resolveLink'])->name('browser.links.resolve');

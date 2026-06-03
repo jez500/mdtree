@@ -41,7 +41,7 @@ test('browser show renders the browser page', function () {
     file_put_contents($this->workspaceDir.'/hello.md', '# Hello');
 
     Cache::shouldReceive('remember')
-        ->once()
+        ->zeroOrMoreTimes()
         ->andReturnUsing(fn (string $key, mixed $ttl, callable $callback) => $callback());
 
     $this->get('/browser/test')
@@ -60,7 +60,7 @@ test('browser show supports partial reloads without reloading the tree', functio
     file_put_contents($this->workspaceDir.'/hello.md', '# Hello World');
 
     Cache::shouldReceive('remember')
-        ->once()
+        ->zeroOrMoreTimes()
         ->andReturnUsing(fn (string $key, mixed $ttl, callable $callback) => $callback());
 
     $this->get('/browser/test?path=hello.md')

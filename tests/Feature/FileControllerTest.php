@@ -95,6 +95,7 @@ test('file save requires authentication', function () {
 });
 
 test('file create creates a file', function () {
+    Cache::shouldReceive('remember')->andReturnUsing(fn ($key, $ttl, $callback) => $callback());
     Cache::shouldReceive('forget')->once();
 
     $this->postJson('/api/files/test/create', [
@@ -121,6 +122,7 @@ test('file create rejects existing files', function () {
 });
 
 test('directory create creates a directory', function () {
+    Cache::shouldReceive('remember')->andReturnUsing(fn ($key, $ttl, $callback) => $callback());
     Cache::shouldReceive('forget')->once();
 
     $this->postJson('/api/directories/test', [
@@ -141,6 +143,7 @@ test('directory create rejects traversal attempts', function () {
 test('file delete deletes a file', function () {
     file_put_contents($this->workspaceDir.'/notes.md', '# Notes');
 
+    Cache::shouldReceive('remember')->andReturnUsing(fn ($key, $ttl, $callback) => $callback());
     Cache::shouldReceive('forget')->once();
 
     $this->deleteJson('/api/files/test', [
@@ -162,6 +165,7 @@ test('node move moves a file', function () {
     file_put_contents($this->workspaceDir.'/notes.md', '# Notes');
     mkdir($this->workspaceDir.'/archive', 0755, true);
 
+    Cache::shouldReceive('remember')->andReturnUsing(fn ($key, $ttl, $callback) => $callback());
     Cache::shouldReceive('forget')->once();
 
     $this->patchJson('/api/files/test', [
