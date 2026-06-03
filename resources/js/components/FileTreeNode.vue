@@ -21,7 +21,6 @@ const openFolders = inject<Set<string>>('filetree-open-folders')!;
 const toggleFolder = inject<(path: string) => void>('filetree-toggle-folder')!;
 const activePath = inject<ComputedRef<string | null>>('filetree-active-path')!;
 const submitMove = inject<(fromPath: string, toPath: string) => void>('filetree-submit-move')!;
-const onRootDrop = inject<(event: DragEvent) => void>('filetree-on-root-drop')!;
 const openNodeDialog = inject<
     (mode: 'createFile' | 'createDir' | 'deleteFile', path: string) => void
 >('filetree-open-dialog')!;

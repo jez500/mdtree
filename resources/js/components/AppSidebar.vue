@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
-import { BookOpen, FolderGit2, FolderOpen } from 'lucide-vue-next';
+import { FolderOpen } from 'lucide-vue-next';
 import { index } from '@/actions/App/Http/Controllers/BrowserController';
 import AppLogo from '@/components/AppLogo.vue';
 import NavFooter from '@/components/NavFooter.vue';

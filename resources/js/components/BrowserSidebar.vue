@@ -9,7 +9,6 @@ import type { FileTreeNode, WorkspaceMap } from '@/types/browser';
 import NavUser from '@/components/NavUser.vue';
 import NavFooter from '@/components/NavFooter.vue';
 import type { NavItem } from '@/types';
-import { BookOpen, FolderGit2 } from 'lucide-vue-next';
 
 const page = usePage<{
     workspace: string;

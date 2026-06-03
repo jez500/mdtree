@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { ref } from 'vue';
-import { usePage } from '@inertiajs/vue3';
 import { edit } from '@/routes/workspaces';
 import { store, destroy, update } from '@/actions/App/Http/Controllers/WorkspaceController';
 import type { WorkspaceWithId } from '@/types/browser';
