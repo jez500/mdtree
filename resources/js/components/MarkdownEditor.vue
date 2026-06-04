@@ -872,7 +872,7 @@ function normalizeRelativePath(
                 :storage-key="storageKey"
                 :on-update="handleUpdate"
                 class="h-full"
-                class-name="relative min-h-[500px] w-full bg-background p-12 px-8 sm:mb-[calc(20vh)] sm:rounded-lg sm:px-12 sm:shadow-lg max-w-[1024px]"
+                class-name="prose dark:prose-invert relative min-h-[500px] w-full bg-background p-12 px-8 sm:mb-[calc(20vh)] sm:rounded-lg sm:px-12 sm:shadow-lg max-w-[1024px]"
             />
             <TableBubbleMenu :editor="activeEditor" />
             <textarea

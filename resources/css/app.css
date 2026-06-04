@@ -7,6 +7,7 @@
 @layer novel;
 
 @import 'tailwindcss';
+@plugin '@tailwindcss/typography';
 
 @import 'tw-animate-css';
 @import 'novel-vue/dist/style.css' layer(novel);
@@ -315,6 +316,31 @@ pre.rounded-sm.bg-stone-100.text-stone-800 {
     border-radius: 1rem;
 }
 
+/* Editor prose code tweaks. Uses the typography plugin's prose variables so the
+   colors track light/dark mode automatically. */
+.prose :where(pre):not(:where([class~='not-prose'] *)) {
+    /* ~75% of the prose default of 0.875em; pre > code inherits this size. */
+    font-size: 0.66em;
+}
+
+/* Inline code (anything outside a code block): smaller, with the same background
+   as the code block so it reads as a pill. */
+.prose :where(code):not(:where(pre code)):not(:where([class~='not-prose'] *)) {
+    background-color: var(--tw-prose-pre-bg);
+    color: var(--tw-prose-pre-code);
+    font-size: 0.8em;
+    font-weight: 500;
+    padding: 0.15em 0.4em;
+    border-radius: 0.25rem;
+}
+
+/* Drop the backtick quotes prose adds around inline code; they look wrong inside
+   the pill background. */
+.prose :where(code):not(:where(pre code))::before,
+.prose :where(code):not(:where(pre code))::after {
+    content: none;
+}
+
 /* Table */
 .ProseMirror table {
     border-collapse: collapse;
@@ -417,7 +443,10 @@ html.dark .prose-stone {
     --tw-prose-captions: var(--tw-prose-invert-captions);
     --tw-prose-code: var(--tw-prose-invert-code);
     --tw-prose-pre-code: var(--tw-prose-invert-pre-code);
-    --tw-prose-pre-bg: var(--tw-prose-invert-pre-bg);
+    /* The default inverted pre background is a 50%-transparent black, which is
+       nearly invisible on the dark editor background. Use the elevated muted
+       surface so code blocks and inline code read clearly in dark mode. */
+    --tw-prose-pre-bg: var(--muted);
     --tw-prose-th-borders: var(--tw-prose-invert-th-borders);
     --tw-prose-td-borders: var(--tw-prose-invert-td-borders);
 }
