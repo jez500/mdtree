@@ -1,7 +1,15 @@
+/* Declare the novel-vue layer first so it has the lowest priority. Its bundled
+   stylesheet is a full Tailwind v3 build (global preflight + duplicate utility
+   classes) that would otherwise leak past the editor and override the app's
+   Tailwind v4 styles app-wide. Layering it below Tailwind's own layers keeps the
+   editor-only selectors (.tiptap/.ProseMirror/.prose-*) while letting the app's
+   preflight and utilities win everywhere else. */
+@layer novel;
+
 @import 'tailwindcss';
 
 @import 'tw-animate-css';
-@import 'novel-vue/dist/style.css';
+@import 'novel-vue/dist/style.css' layer(novel);
 
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
