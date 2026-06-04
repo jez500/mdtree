@@ -13,8 +13,10 @@ class WorkspacesController extends Controller
 
     public function edit(): Response
     {
+        // Keyed as 'workspaceList' (not 'workspaces') so this array prop does not
+        // override the shared, slug-keyed 'workspaces' map used by the WorkspaceSwitcher.
         return Inertia::render('settings/Workspaces', [
-            'workspaces' => $this->workspaceService->allWithId(),
+            'workspaceList' => $this->workspaceService->allWithId(),
         ]);
     }
 }

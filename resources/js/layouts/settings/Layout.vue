@@ -8,6 +8,7 @@ import { toUrl } from '@/lib/utils';
 import { edit as editAppearance } from '@/routes/appearance';
 import { edit as editProfile } from '@/routes/profile';
 import { edit as editSecurity } from '@/routes/security';
+import { edit as editWorkspaces } from '@/routes/workspaces';
 import type { NavItem } from '@/types';
 
 const sidebarNavItems: NavItem[] = [
@@ -18,6 +19,10 @@ const sidebarNavItems: NavItem[] = [
     {
         title: 'Security',
         href: editSecurity(),
+    },
+    {
+        title: 'Workspaces',
+        href: editWorkspaces(),
     },
     {
         title: 'Appearance',
@@ -37,13 +42,13 @@ const { isCurrentOrParentUrl } = useCurrentUrl();
 
         <div class="flex flex-col gap-8 lg:flex-row lg:gap-12">
             <aside class="w-full lg:w-48 lg:shrink-0">
-                <nav class="flex gap-1 border-b pb-4" aria-label="Settings">
+                <nav class="flex flex-col gap-1" aria-label="Settings">
                     <Button
                         v-for="item in sidebarNavItems"
                         :key="toUrl(item.href)"
                         variant="ghost"
                         :class="[
-                            'w justify-start',
+                            'w-full justify-start',
                             { 'bg-muted': isCurrentOrParentUrl(item.href) },
                         ]"
                         as-child

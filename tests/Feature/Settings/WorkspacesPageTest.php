@@ -1,6 +1,8 @@
 <?php
 
 use App\Models\User;
+use App\Models\Workspace;
+use Illuminate\Support\Facades\Config;
 
 test('the root document renders a csrf-token meta tag for client requests', function () {
     $this->withoutVite();
@@ -12,4 +14,23 @@ test('the root document renders a csrf-token meta tag for client requests', func
     $this->get(route('workspaces.edit'))
         ->assertOk()
         ->assertSee('name="csrf-token"', false);
+});
+
+test('the workspaces page does not clobber the shared workspaces map used by the switcher', function () {
+    $this->withoutVite();
+    Config::set('mdtree.workspaces', []);
+    $this->actingAs(User::factory()->create());
+
+    Workspace::create(['slug' => 'docs', 'name' => 'Docs', 'path' => sys_get_temp_dir()]);
+
+    // The page-level array prop must be 'workspaceList'; the shared 'workspaces'
+    // prop must stay a slug-keyed map so WorkspaceSwitcher links resolve to
+    // /browser/{slug} instead of /browser/{index}.
+    $this->get(route('workspaces.edit'))
+        ->assertInertia(fn ($page) => $page
+            ->component('settings/Workspaces')
+            ->has('workspaceList', 1)
+            ->where('workspaceList.0.slug', 'docs')
+            ->where('workspaces.docs.name', 'Docs')
+        );
 });

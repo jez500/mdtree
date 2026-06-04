@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { router } from '@inertiajs/vue3';
 import { ref } from 'vue';
 import { edit } from '@/routes/workspaces';
 import { store, destroy, update } from '@/actions/App/Http/Controllers/WorkspaceController';
@@ -35,7 +36,9 @@ defineOptions({
     },
 });
 
-const workspaces = defineModel<WorkspaceWithId[]>('workspaces', { default: [] });
+// Named 'workspaceList' (not 'workspaces') so this page-level array prop does not
+// override the shared, slug-keyed 'workspaces' map that the WorkspaceSwitcher reads.
+const workspaceList = defineModel<WorkspaceWithId[]>('workspaceList', { default: [] });
 
 const showAddDialog = ref(false);
 const showEditDialog = ref(false);
@@ -100,7 +103,8 @@ function handleStore() {
         })
         .then((data) => {
             showAddDialog.value = false;
-            workspaces.value = [...workspaces.value, data.workspace];
+            workspaceList.value = [...workspaceList.value, data.workspace];
+            router.reload({ only: ['workspaces'] });
         })
         .catch((data) => {
             if (data.errors) {
@@ -139,9 +143,10 @@ function handleUpdate() {
         })
         .then((data) => {
             showEditDialog.value = false;
-            workspaces.value = workspaces.value.map((ws) =>
+            workspaceList.value = workspaceList.value.map((ws) =>
                 ws.id === editingWorkspace.value!.id ? data.workspace : ws
             );
+            router.reload({ only: ['workspaces'] });
         })
         .catch((data) => {
             if (data.errors) {
@@ -175,7 +180,8 @@ function handleDelete() {
         })
         .then(() => {
             showDeleteDialog.value = false;
-            workspaces.value = workspaces.value.filter((ws) => ws.id !== deletingWorkspace.value!.id);
+            workspaceList.value = workspaceList.value.filter((ws) => ws.id !== deletingWorkspace.value!.id);
+            router.reload({ only: ['workspaces'] });
         })
         .finally(() => {
             processing.value = false;
@@ -207,7 +213,7 @@ function handleDelete() {
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                    <TableRow v-for="workspace in workspaces" :key="workspace.id">
+                    <TableRow v-for="workspace in workspaceList" :key="workspace.id">
                         <TableCell class="font-medium">{{ workspace.name }}</TableCell>
                         <TableCell>
                             <code class="rounded bg-muted px-1.5 py-0.5 text-xs">{{ workspace.slug }}</code>
@@ -224,7 +230,7 @@ function handleDelete() {
                             </div>
                         </TableCell>
                     </TableRow>
-                    <TableRow v-if="workspaces.length === 0">
+                    <TableRow v-if="workspaceList.length === 0">
                         <TableCell colspan="4" class="h-24 text-center text-muted-foreground">
                             No workspaces yet. Click "Add Workspace" to create one.
                         </TableCell>
