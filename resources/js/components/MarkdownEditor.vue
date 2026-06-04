@@ -79,6 +79,11 @@ watch(
             transactionTick.value++;
         });
 
+        // novel-vue's Link extension opens links with window.open() using the raw
+        // (relative) href, which bypasses our resolver and 404s (e.g. /browser/TODO.md).
+        // Remove that plugin so the click handler below is the only link navigator.
+        ed.unregisterPlugin('handleClickLink');
+
         ed.view.dom.addEventListener('click', (event: MouseEvent) => {
             const anchor =
                 event.target instanceof Element
@@ -91,12 +96,15 @@ watch(
 
             const href = anchor.getAttribute('href') ?? '';
 
-            if (/^https?:\/\//i.test(href)) {
-                return;
-            }
-
             event.preventDefault();
             event.stopPropagation();
+
+            // External links: open in a new tab (we removed novel's openOnClick plugin).
+            if (/^https?:\/\//i.test(href)) {
+                window.open(href, '_blank', 'noopener,noreferrer');
+
+                return;
+            }
 
             if (isLocalMarkdownHref(href) && isMarkdownPath(href)) {
                 router.visit(
